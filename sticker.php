@@ -118,7 +118,7 @@
         }
 
         const reverseGeocode = async (lat, long) => {
-            const url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&email=malte.now@gmx.de&zoom=14&lat=' + lat + '&lon=' + long;
+            const url = 'https://nominatim.openstreetmap.org/reverse?format=json&email=malte.now@gmx.de&zoom=14&lat=' + lat + '&lon=' + long;
             const response = await fetch(url);
             const myJson = await response.json(); //extract JSON from the http response
             let city;

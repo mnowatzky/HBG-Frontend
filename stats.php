@@ -24,6 +24,7 @@
 
     <?php
     //connection
+    include 'db_conn.php';
     $conn = getConn();
 
     $query = 'SELECT * FROM locations';
