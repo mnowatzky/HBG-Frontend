@@ -190,6 +190,8 @@
                             $description = "<b>Sticker Nr. " . $i . "</b><br>von " . $name;
                         } elseif ($i == 420) {
                             $description = "<b>420 blaze it</b></br>von " . $name;
+                        } elseif ($i == 69) {
+                            $description = "<b>Nice Sticker</b></br>von" . $name;
                         }
                         echo "{
                                     'type': 'Feature',
