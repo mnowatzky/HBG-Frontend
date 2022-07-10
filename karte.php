@@ -67,7 +67,7 @@
     const map = new mapboxgl.Map({
         container: 'map', // container ID
         style: 'mapbox://styles/mapbox/streets-v11', // style URL
-        center: [10.05982550634, 51.3310067475], // starting position [lng, lat]
+        center: getNewestStickerCoords(), // starting position [lng, lat]
         zoom: 5, // starting zoom
         attributionControl: false
     });
@@ -161,15 +161,11 @@
     });
 
     function getNewestStickerCoords() {
-        let newCoords = [<?php echo end($resultarr)['longitude'] . "," . end($resultarr)['latitude'] ?>];
-
-        return newCoords;
+        return [<?php echo end($resultarr)['longitude'] . "," . end($resultarr)['latitude'] ?>];
     }
 
     function getNewestStickerDesc() {
-        let name = <?php echo "'<b>Neuster Sticker</b><br/>von " . nl2br(stripslashes(end($resultarr)['name'])) . "'" ?>;
-
-        return name;
+        return <?php echo "'<b>Neuster Sticker</b><br/>von " . nl2br(stripslashes(end($resultarr)['name'])) . "'" ?>;
     }
 
     function getStickersGeoJson() {
