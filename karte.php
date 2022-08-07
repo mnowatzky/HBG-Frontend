@@ -42,7 +42,15 @@
     include 'db_conn.php';
     $conn = getConn();
 
-    $query = 'SELECT * FROM locations ORDER BY date ASC';
+    if (isset($_GET['name'])) {
+        $selected_name = $_GET['name'];
+        $query = sprintf("SELECT * FROM locations WHERE name = '%s' ORDER BY date ASC",
+            $conn->real_escape_string($selected_name));
+    } else {
+        // no name selected
+        $query = 'SELECT * FROM locations ORDER BY date ASC';
+    }
+
     $result = mysqli_query($conn, $query) or die(mysqli_error($conn));
 
     //get sticker count

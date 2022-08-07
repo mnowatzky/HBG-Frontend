@@ -40,8 +40,8 @@
     while ($row = $resultarr[$i]) {
         $names_raw = $row['name'];
         //Regeln fuer Spitznamen
-        $spitznamen = array("Kahlin", "Khalin", "Janni", "Timouw", "Le Nerd", "TT", "Paul Klotzke", "LX", "Stefanie Nowatzky", "Piet Nowatzky", "Hansivader");
-        $klarnamen = array("Collin", "Collin", "Jan-Simon", "Timow", "Lennart", "Theresa", "Paul", "Henry", "Stefanie", "Piet", "Piet");
+        $spitznamen = array("Khalin", "Janni", "Timouw", "Le Nerd", "TT", "Paul Klotzke", "LX", "Stefanie Nowatzky", "Piet Nowatzky", "Hansivader");
+        $klarnamen = array("Collin", "Jan-Simon", "Timow", "Lennart", "Theresa", "Paul", "Henry", "Stefanie", "Piet", "Piet");
         //ersetzen von Spitznamen
         $names = str_replace($spitznamen, $klarnamen, $names_raw);
         //Sonderfall Timo
@@ -76,78 +76,67 @@
     $conn->close();
     ?>
 
+    <style>
+        #stickercount {
+            font-family: Roboto, sans-serif;
+            font-size: 17px;
+        }
+    </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {packages: ['corechart', 'bar']});
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+            var data = google.visualization.arrayToDataTable([
+                ['Name', 'Anzahl Sticker'],
+                <?php
+                foreach ($count_per_person as $person => $count) {
+                    echo "['" . $person . "', " . $count . "],\n";
+                }
+                ?>
+            ]);
+
+            const options = {
+                title: 'Geklebte Sticker pro Person',
+                // chartArea: {width: '80%', height: '80%'},
+                hAxis: {
+                    minValue: 0
+                },
+                animation: {
+                    startup: true,
+                    duration: 1000,
+                    easing: 'out',
+                },
+                theme: 'material',
+                legend: {position: 'none'},
+            };
+
+            const chart = new google.visualization.BarChart(document.getElementById('barchart_material'));
+
+            chart.draw(data, options);
+        }
+
+        function getStickerCoords() {
+            const stickers = {
+                <?php
+                reset($resultarr);
+                while ($row = current($resultarr)) {
+                    next($resultarr);
+                    $name = nl2br(stripslashes($row['name']));
+                    echo "'" . $name . "' : [" . $row['latitude'] . ", " . $row['longitude'] . "],";
+                }
+                ?>
+            };
+
+            return stickers;
+        }
+    </script>
 </head>
 <body>
-
-<canvas id="stickerCount" style="width:100%;max-width:1000px"></canvas>
-
-<script>
-    function getNames() {
-        <?php
-        echo "return [";
-        foreach ($count_per_person as $person => $count) {
-            echo "'" . $person . "', ";
-        }
-        echo "]";
-        ?>
-    }
-
-    function getCounts() {
-        <?php
-        echo "return [";
-        foreach ($count_per_person as $person => $count) {
-            echo $count . ", ";
-        }
-        echo "]";
-        ?>
-    }
-
-    document.getElementById('stickerCount').style.height = getNames().length * 20 + 'px';
-
-    const xValues = getNames();
-    const datasets = [{
-        backgroundColor: "#215dba",
-        data: getCounts(),
-        label: "Geklebte Sticker"
-    }]
-
-    const ctx = document.getElementById("stickerCount").getContext("2d");
-
-    const stickerChart = new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels: xValues,
-            datasets
-        },
-        options: {
-            indexAxis: 'y',
-            plugins: {
-                legend: {display: false},
-                title: {
-                    display: true,
-                    text: "Geklebte Sticker pro Person",
-                }
-            }
-        },
-        plugins:[{
-            id: 'click-anywhere',
-            afterEvent(chart, args) {
-                if (args.event.type === 'click') {
-                    let {x, y} = chart.scales;
-                    let value = x.getValueForPixel(args.event.x);
-                    let yVal = y.getLabelForValue(y.getValueForPixel(args.event.y))
-                    console.log('value: ' + value + ', rounded: ' + Math.round(value) + ', x label: ' + yVal);
-                    if (value < 0) {
-                        window.open("https://intern.diehbg.de/karte?name=" + yVal, "Karte")
-                    }
-                }
-            }
-        }]
-    });
-</script>
-
-<p style="font-family: Roboto, sans-serif; font-size: 17px;">Anzahl Sticker gesamt: <?php echo $length ?></p>
+<div id="barchart_material"
+     style="width: 90vw; max-width: 900px; height: 2000px; margin-top: -15vh; margin-left: 10vw;"></div>
+<p id="stickercount">Anzahl Sticker gesamt: <?php echo $length ?></p>
 </body>
 </html>

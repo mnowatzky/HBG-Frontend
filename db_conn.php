@@ -11,7 +11,6 @@ function getConn()
     $pw = $credentials[2];
     $db = $credentials[3];
 
-    $conn = new mysqli($hostname, $username, $pw, $db);
-    return $conn;
+    return new mysqli($hostname, $username, $pw, $db);
 }
 ?>
