@@ -31,37 +31,105 @@
         body {
             font-family: Roboto, sans-serif;
             font-size: 17px;
+            margin: 0;
         }
-        .content {
-            width: 80%;
-            margin-right: auto;
-            margin-left: auto;
+
+        a:link { text-decoration: none; }
+        a:visited { text-decoration: none; }
+        a:hover { text-decoration: none; }
+        a:active { text-decoration: none; }
+
+       .button {
+           align-items: center;
+           appearance: none;
+           background-color: #fff;
+           border-radius: 24px;
+           border-style: none;
+           box-shadow: rgba(0, 0, 0, .2) 0 3px 5px -1px,rgba(0, 0, 0, .14) 0 6px 10px 0,rgba(0, 0, 0, .12) 0 1px 18px 0;
+           box-sizing: border-box;
+           color: #3c4043;
+           cursor: pointer;
+           display: inline-flex;
+           fill: currentcolor;
+           font-family: "Google Sans",Roboto,Arial,sans-serif;
+           font-size: 14px;
+           font-weight: 500;
+           height: 48px;
+           justify-content: center;
+           letter-spacing: .25px;
+           line-height: normal;
+           max-width: 100%;
+           overflow: visible;
+           padding: 2px 24px;
+           position: relative;
+           text-align: center;
+           text-transform: none;
+           transition: box-shadow 280ms cubic-bezier(.4, 0, .2, 1),opacity 15ms linear 30ms,transform 270ms cubic-bezier(0, 0, .2, 1) 0ms;
+           user-select: none;
+           -webkit-user-select: none;
+           touch-action: manipulation;
+           width: auto;
+           will-change: transform,opacity;
+           z-index: 0;
+           margin: 10px;
+       }
+
+        .button:hover {
+            background: #F6F9FE;
+            color: #174ea6;
         }
-        .button {
-            width: 30%;
-            min-height: 4em;
-            margin: 10px 20px 20px;
-            /*            padding: 6px 15px;*/
-            border: 5px solid #000000;
-            background-color: #ffffff;
-            color: black;
-            cursor: pointer;
+
+        .button:active {
+            box-shadow: 0 4px 4px 0 rgb(60 64 67 / 30%), 0 8px 12px 6px rgb(60 64 67 / 15%);
+            outline: none;
         }
+
+        .button:focus {
+            outline: none;
+            border: 2px solid #4285f4;
+        }
+
+        .button:not(:disabled) {
+            box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
+        }
+
+        .button:not(:disabled):hover {
+            box-shadow: rgba(60, 64, 67, .3) 0 2px 3px 0, rgba(60, 64, 67, .15) 0 6px 10px 4px;
+        }
+
+        .button:not(:disabled):focus {
+            box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
+        }
+
+        .button:not(:disabled):active {
+            box-shadow: rgba(60, 64, 67, .3) 0 4px 4px 0, rgba(60, 64, 67, .15) 0 8px 12px 6px;
+        }
+
+        .button:disabled {
+            box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
+        }
+
         .name {
-            width: 80%;
+            width: 90%;
             font-size: 1.2em;
-            max-width: 580px;
-            margin: 20px;
-            margin-bottom: 10px;
+            max-width: 800px;
+            margin: 20px 10px 10px;
+            padding: 0;
         }
         .logo {
-            width: 80%;
-            max-width: 500px;
+            width: 90%;
+            max-width: 600px;
+            display: block;
+            margin-top: 10px;
             margin-left: auto;
             margin-right: auto;
         }
-        .buttontext {
-            height: 2em;
+
+        #divider {
+            width: 100%;
+            height: 5vh;
+            background-image: url("bilder/diagonal_pattern.svg");
+            background-repeat: repeat-x;
         }
 
         #loader {
@@ -104,12 +172,13 @@
 <body>
 
     <div id="content" style="filter: none">
-        <img src="bilder/Logo_final.jpg" class="logo" alt="HBG Logo">
-        <input type="text" id="name" name="name" placeholder="Name (max. 30 Zeichen)" class="name">
-        <label for="name">Mehrere Namen mit "&" trennen</label>
+        <img src="bilder/Sticker_header.svg" class="logo" alt="HBG Logo"><br>
+        <div id="divider"></div>
+        <input type="text" id="name" name="name" placeholder="Name (max. 30 Zeichen)" class="name"><br>
+        <label for="name" style="margin: 10px">Mehrere Namen mit "&" trennen</label>
         <br>
         <span>
-            <button onclick="getLocation()" class="button" id="submit"><p class="buttontext">Sticker speichern</p></button>
+            <button onclick="getLocation()" class="button" id="submit"><p>Sticker speichern</p></button>
             <a href="/karte"><button class="button"><p class="buttontext">Karte</p></button></a>
             <a href="/stats"><button class="button"><p class="buttontext">Statistik</p></button></a>
         </span>
