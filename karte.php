@@ -41,22 +41,34 @@
     <?php
     include 'db_conn.php';
     $conn = getConn();
+    $single = false;
 
     if (isset($_GET['name'])) {
         $selected_name = $_GET['name'];
-        $query = sprintf("SELECT * FROM locations WHERE name = '%s' ORDER BY date ASC",
-            $conn->real_escape_string($selected_name));
-    } else {
-        // no name selected
-        $query = 'SELECT * FROM locations ORDER BY date ASC';
+        $single = true;
     }
+    $query = 'SELECT * FROM locations ORDER BY date ASC';
+
 
     $result = mysqli_query($conn, $query) or die(mysqli_error($conn));
+    $resultarr = mysqli_fetch_all($result, MYSQLI_ASSOC);
+
+    //filter names if specific name is selected
+    $i = 0;
+    if ($single) {
+        while ($row = $resultarr[$i]) {
+            $name = nl2br(stripslashes($row['name']));
+            if (!str_contains($name, $selected_name)) {
+                unset($resultarr[$i]);
+            }
+            $i++;
+        }
+        $resultarr = array_values($resultarr);
+        $i = 0;
+    }
 
     //get sticker count
-    $resultarr = mysqli_fetch_all($result, MYSQLI_ASSOC);
     $length = sizeof($resultarr);
-    $i = 0;
     ?>
 </head>
 <body>
@@ -152,11 +164,12 @@
         });
 
         //open Popup for newest sticker
-        new mapboxgl.Popup({offset: popupOffsets})
-            .setLngLat(getNewestStickerCoords())
-            .setHTML(getNewestStickerDesc())
-            .addTo(map);
-
+        if (getNewestStickerDesc() !== "no sticker") {
+            new mapboxgl.Popup({offset: popupOffsets})
+                .setLngLat(getNewestStickerCoords())
+                .setHTML(getNewestStickerDesc())
+                .addTo(map);
+        }
         // Change the cursor to a pointer when the mouse is over the places layer.
         map.on('mouseenter', 'stickers', () => {
             map.getCanvas().style.cursor = 'pointer';
@@ -169,11 +182,14 @@
     });
 
     function getNewestStickerCoords() {
-        return [<?php echo end($resultarr)['longitude'] . "," . end($resultarr)['latitude'] ?>];
+        let lat = <?php echo empty($resultarr) ? 51.1642292 : end($resultarr)['latitude'] ?>;
+        let long = <?php echo empty($resultarr) ? 10.4541194 : end($resultarr)['longitude'] ?>;
+
+        return [long, lat];
     }
 
     function getNewestStickerDesc() {
-        return <?php echo "'<b>Neuster Sticker</b><br/>von " . nl2br(stripslashes(end($resultarr)['name'])) . "'" ?>;
+        return <?php echo empty($resultarr) ? "'no sticker'" : "'<b>Neuster Sticker</b><br/>von " . nl2br(stripslashes(end($resultarr)['name'])) . "'" ?>;
     }
 
     function getStickersGeoJson() {
@@ -195,8 +211,11 @@
                         } elseif ($i == 420) {
                             $description = "<b>420 blaze it</b></br>von " . $name;
                         } elseif ($i == 69) {
-                            $description = "<b>Nice Sticker</b></br>von" . $name;
+                            $description = "<b>Sticker 69 (nice)</b></br>von " . $name;
+                        } elseif ($i == 1) {
+                            $description = "<b>Sticker Nr. 1</b></br>von " . $name;
                         }
+
                         echo "{
                                     'type': 'Feature',
                                     'properties': {

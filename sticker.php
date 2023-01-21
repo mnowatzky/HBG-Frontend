@@ -29,7 +29,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <style type="text/css">
         body {
-            font-family: Roboto;
+            font-family: Roboto, sans-serif;
             font-size: 17px;
         }
         .content {
@@ -40,9 +40,8 @@
         .button {
             width: 30%;
             min-height: 4em;
-            margin: 20px;
-            margin-top: 10px;
-/*            padding: 6px 15px;*/
+            margin: 10px 20px 20px;
+            /*            padding: 6px 15px;*/
             border: 5px solid #000000;
             background-color: #ffffff;
             color: black;
@@ -57,18 +56,55 @@
         }
         .logo {
             width: 80%;
+            max-width: 500px;
             margin-left: auto;
             margin-right: auto;
         }
         .buttontext {
             height: 2em;
         }
+
+        #loader {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 100px;
+            height: 100px;
+            -webkit-animation: spin 2s linear infinite; /* Safari */
+            animation: spin 2s linear infinite;
+        }
+
+        /* Safari */
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform-origin: 0 0;
+                -webkit-transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                -webkit-transform-origin: 0 0;
+                -webkit-transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform-origin: 0 0;
+                transform: rotate(0deg) translate(-50%, -50%);
+            }
+            100% {
+                transform-origin: 0 0;
+                transform: rotate(360deg) translate(-50%, -50%);
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div id="content">
-        <img src="bilder/Logo_final.jpg" class="logo">
+    <div id="content" style="filter: none">
+        <img src="bilder/Logo_final.jpg" class="logo" alt="HBG Logo">
         <input type="text" id="name" name="name" placeholder="Name (max. 30 Zeichen)" class="name">
         <label for="name">Mehrere Namen mit "&" trennen</label>
         <br>
@@ -78,11 +114,12 @@
             <a href="/stats"><button class="button"><p class="buttontext">Statistik</p></button></a>
         </span>
     </div>
-    
+    <div id="loader" style="display: none"></div>
+
 
     <script>
         // Get the input field
-        var input = document.getElementById("name");
+        const input = document.getElementById("name");
 
         // Execute a function when the user releases a key on the keyboard
         input.addEventListener("keyup", function(event) {
@@ -95,9 +132,20 @@
           }
         });
 
-        function getLocation() {
+        function showLoading() {
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById("submit").disabled = true;
+            document.getElementById("content").style.filter = 'blur(5px)';
+        }
 
-            var name = document.getElementById("name").value;
+        function hideLoading() {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById("submit").disabled = false;
+            document.getElementById("content").style.filter = 'none';
+        }
+
+        function getLocation() {
+            const name = document.getElementById("name").value;
 
             //check if name is empty
             if (!name.trim()) {
@@ -110,6 +158,7 @@
             else {
                 //get location
                 if (navigator.geolocation) {
+                    showLoading();
                     navigator.geolocation.getCurrentPosition(savePosition);
                 } else {
                     new duDialog('Fehler', 'Standort kann nicht ermittelt werden');
@@ -160,6 +209,7 @@
                     },
                     //feedback
                     success:function(data){
+                        hideLoading();
                         if (data == "Sticker gespeichert") {
                             new duDialog('Fertig', data);
                         } else {

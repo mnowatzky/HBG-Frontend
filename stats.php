@@ -138,7 +138,7 @@
                     let {x, y} = chart.scales;
                     let value = x.getValueForPixel(args.event.x);
                     let yVal = y.getLabelForValue(y.getValueForPixel(args.event.y))
-                    console.log('value: ' + value + ', rounded: ' + Math.round(value) + ', x label: ' + yVal);
+                    //console.log('value: ' + value + ', rounded: ' + Math.round(value) + ', x label: ' + yVal);
                     if (value < 0) {
                         window.open("https://intern.diehbg.de/karte?name=" + yVal, "Karte")
                     }
