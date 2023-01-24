@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 27.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Ebene_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 86 62" enable-background="new 0 0 86 62" xml:space="preserve">
+<pattern  x="-61" y="-432" width="600" height="600" patternUnits="userSpaceOnUse" id="diagonal" viewBox="0 -600 600 600" overflow="visible">
+	<g>
+		<rect y="-600" fill="none" width="600" height="600"/>
+		<polygon fill="none" points="600,-535.5 600,-578.8 21.2,0 64.5,0 		"/>
+		<polygon fill="none" points="150.2,0 600,-449.8 600,-493.1 106.9,0 		"/>
+		<polygon fill="none" points="278.4,-600 0,-321.6 0,-278.4 321.6,-600 		"/>
+		<polygon fill="none" points="106.9,-600 0,-493.1 0,-449.8 150.2,-600 		"/>
+		<polygon fill="none" points="192.6,-600 0,-407.4 0,-364.1 235.9,-600 		"/>
+		<polygon fill="none" points="578.8,0 600,-21.2 600,-64.5 535.5,0 		"/>
+		<polygon fill="none" points="407.4,0 600,-192.6 600,-235.9 364.1,0 		"/>
+		<polygon fill="none" points="535.5,-600 0,-64.5 0,-21.2 578.8,-600 		"/>
+		<polygon fill="none" points="21.2,-600 0,-578.8 0,-535.5 64.5,-600 		"/>
+		<polygon fill="none" points="493.1,0 600,-106.9 600,-150.2 449.8,0 		"/>
+		<polygon fill="none" points="449.8,-600 0,-150.2 0,-106.9 493.1,-600 		"/>
+		<polygon fill="none" points="321.6,0 600,-278.4 600,-321.6 278.4,0 		"/>
+		<polygon fill="none" points="364.1,-600 0,-235.9 0,-192.6 407.4,-600 		"/>
+		<polygon fill="none" points="235.9,0 600,-364.1 600,-407.4 192.6,0 		"/>
+		<polygon points="0,-600 0,-578.8 21.2,-600 		"/>
+		<polygon points="64.5,-600 0,-535.5 0,-493.1 106.9,-600 		"/>
+		<polygon points="150.2,-600 0,-449.8 0,-407.4 192.6,-600 		"/>
+		<polygon points="235.9,-600 0,-364.1 0,-321.6 278.4,-600 		"/>
+		<polygon points="321.6,-600 0,-278.4 0,-235.9 364.1,-600 		"/>
+		<polygon points="407.4,-600 0,-192.6 0,-150.2 449.8,-600 		"/>
+		<polygon points="493.1,-600 0,-106.9 0,-64.5 535.5,-600 		"/>
+		<polygon points="600,-600 578.8,-600 0,-21.2 0,0 21.2,0 600,-578.8 		"/>
+		<polygon points="106.9,0 600,-493.1 600,-535.5 64.5,0 		"/>
+		<polygon points="192.6,0 600,-407.4 600,-449.8 150.2,0 		"/>
+		<polygon points="278.4,0 600,-321.6 600,-364.1 235.9,0 		"/>
+		<polygon points="364.1,0 600,-235.9 600,-278.4 321.6,0 		"/>
+		<polygon points="449.8,0 600,-150.2 600,-192.6 407.4,0 		"/>
+		<polygon points="535.5,0 600,-64.5 600,-106.9 493.1,0 		"/>
+		<polygon points="600,0 600,-21.2 578.8,0 		"/>
+	</g>
+</pattern>
+<g>
+	<g>
+		<defs>
+			<rect id="SVGID_1_" x="-29" y="-432" width="441" height="441"/>
+		</defs>
+		<clipPath id="SVGID_00000166647095552215535980000001217726935492782472_">
+			<use xlink:href="#SVGID_1_"  overflow="visible"/>
+		</clipPath>
+		<g clip-path="url(#SVGID_00000166647095552215535980000001217726935492782472_)">
+			<defs>
+				<rect id="SVGID_00000133489152997287950960000003689191356620922502_" x="-29" y="-432" width="441" height="441"/>
+			</defs>
+			<clipPath id="SVGID_00000083059771366431091970000002294209864332713632_">
+				<use xlink:href="#SVGID_00000133489152997287950960000003689191356620922502_"  overflow="visible"/>
+			</clipPath>
+		</g>
+		<g clip-path="url(#SVGID_00000166647095552215535980000001217726935492782472_)">
+			<defs>
+				<rect id="SVGID_00000153663114470472706340000000228853467742727568_" x="-29" y="-432" width="441" height="441"/>
+			</defs>
+			<clipPath id="SVGID_00000135659207741721448160000009173707287844656310_">
+				<use xlink:href="#SVGID_00000153663114470472706340000000228853467742727568_"  overflow="visible"/>
+			</clipPath>
+		</g>
+	</g>
+</g>
+<rect x="-61" y="0" fill="url(#diagonal)" width="1125" height="62"/>
+</svg>
