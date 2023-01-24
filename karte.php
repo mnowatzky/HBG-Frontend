@@ -22,8 +22,8 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css' rel='stylesheet'/>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css' rel='stylesheet' />
 
     <style>
         body {
@@ -36,6 +36,15 @@
             top: 0;
             bottom: 0;
             width: 100%;
+        }
+        #static {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background-size: 100% 100%;
         }
     </style>
     <?php
@@ -53,7 +62,7 @@
     $result = mysqli_query($conn, $query) or die(mysqli_error($conn));
     $resultarr = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
-    //filter names if specific name is selected
+    //filter sticker data if specific name is selected
     $i = 0;
     if ($single) {
         while ($row = $resultarr[$i]) {
@@ -79,14 +88,22 @@
       type="text/css">
 
 <div id='map'></div>
+<div id="static"></div>
 
 <script>
-    mapboxgl.accessToken = ;
+    mapboxgl.accessToken = 'pk.eyJ1IjoicGl4bHBhaW50ZXIiLCJhIjoiY2p1bWV5ZjVtMHZiaDRmbDg3cW1ubmx3NCJ9.X5FRsatkHE11P2Zwk8zN0w';
+    const clientHeight = Math.min(document.getElementById('static').clientHeight, 1280);
+    const clientWidth = Math.min(document.getElementById('static').clientWidth, 1280);
+    const staticImg = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${getNewestStickerCoords()[0]},`
+        + `${getNewestStickerCoords()[1]},5/${clientWidth}x${clientHeight}@2x?logo=false&access_token=${mapboxgl.accessToken}`;
+
+    document.getElementById("static").style.backgroundImage = `url(${staticImg})`;
+
     const markerHeight = 25;
     const popupOffsets = {'bottom': [0, -markerHeight]};
     const map = new mapboxgl.Map({
         container: 'map', // container ID
-        style: 'mapbox://styles/mapbox/streets-v11', // style URL
+        style: 'mapbox://styles/pixlpainter/clda7ilh1000i01ofotpgomzu', // style URL
         center: getNewestStickerCoords(), // starting position [lng, lat]
         zoom: 5, // starting zoom
         attributionControl: false
@@ -119,30 +136,22 @@
 
     //add markers
     map.on('load', () => {
-        // Add an image to use as a custom marker
-        map.loadImage(
-            'bilder/hbg_marker.png',
-            (error, image) => {
-                if (error) throw error;
-                map.addImage('custom-marker', image);
-                // Add a GeoJSON source with stickers
-                map.addSource('stickers', getStickersGeoJson());
+        // Add source for marker geo data
+        map.addSource('stickers', getStickersGeoJson());
 
-                // Add a symbol layer
-                map.addLayer({
-                    'id': 'stickers',
-                    'type': 'symbol',
-                    'source': 'stickers',
-                    'layout': {
-                        'icon-image': 'custom-marker',
-                        'icon-allow-overlap': true,
-                        'icon-anchor': 'bottom',
-                        'icon-size': 0.25,
-                        'icon-padding': 0
-                    }
-                });
+        // Add a symbol layer for HBG markers
+        map.addLayer({
+            'id': 'stickers',
+            'type': 'symbol',
+            'source': 'stickers',
+            'layout': {
+                'icon-image': 'hbg-marker',
+                'icon-allow-overlap': true,
+                'icon-anchor': 'bottom',
+                'icon-size': 0.3,
+                'icon-padding': 0
             }
-        );
+        });
         // When a click event occurs on a feature in the stickers layer, open a popup at the
         // location of the feature, with description HTML from its properties.
         map.on('click', 'stickers', (e) => {
@@ -179,6 +188,9 @@
         map.on('mouseleave', 'stickers', () => {
             map.getCanvas().style.cursor = '';
         });
+
+        //swap static image with dynamic map
+        document.getElementById("static").style.visibility = 'hidden';
     });
 
     function getNewestStickerCoords() {

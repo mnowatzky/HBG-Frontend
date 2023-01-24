@@ -31,4 +31,5 @@ Disallow: /plugins/
 Disallow: /tmp/
 Disallow: karte.php
 Disallow: sticker.php
+Disallow: stats.php
 
