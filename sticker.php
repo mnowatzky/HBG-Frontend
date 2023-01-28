@@ -27,7 +27,7 @@
     
     <script src="js/duDialog.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <style type="text/css">
+    <style>
         body {
             font-family: Roboto, sans-serif;
             font-size: 17px;
@@ -228,15 +228,20 @@
                 //get location
                 if (navigator.geolocation) {
                     showLoading();
-                    navigator.geolocation.getCurrentPosition(savePosition);
+                    const locationOptions = {maximumAge:600000, timeout:5000, enableHighAccuracy: true};
+                    navigator.geolocation.getCurrentPosition(savePosition,errorCallback_high_accuracy,locationOptions);
                 } else {
                     new duDialog('Fehler', 'Standort kann nicht ermittelt werden');
                 }
             }
         }
 
+        function errorCallback_high_accuracy(error) {
+            new duDialog('Fehler', 'Hohe Standortgenauigkeit fehlgeschlagen');
+        }
+
         const reverseGeocode = async (lat, long) => {
-            const url = 'https://nominatim.openstreetmap.org/reverse?format=json&email=malte.now@gmx.de&zoom=14&lat=' + lat + '&lon=' + long;
+            const url = 'https://nominatim.openstreetmap.org/reverse?format=json&email=malte.now@gmx.de&zoom=10&lat=' + lat + '&lon=' + long;
             const response = await fetch(url);
             const myJson = await response.json(); //extract JSON from the http response
             let city;

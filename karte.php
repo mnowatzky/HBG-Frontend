@@ -229,15 +229,15 @@
                         }
 
                         echo "{
-                                    'type': 'Feature',
-                                    'properties': {
-                                        'description': '" . $description . "' 
-                                    },
-                                    'geometry': {
-                                        'type': 'Point',
-                                        'coordinates': [" . $row['longitude'] . "," . $row['latitude'] . "]
-                                    }
-                                },\n";
+                           'type': 'Feature',
+                           'properties': {
+                               'description': '" . $description . "' 
+                           },
+                           'geometry': {
+                               'type': 'Point',
+                               'coordinates': [" . $row['longitude'] . "," . $row['latitude'] . "]
+                           }
+                       },\n";
                     }
                     $conn->close();
                     ?>
