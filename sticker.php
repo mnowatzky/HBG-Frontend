@@ -17,6 +17,7 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/bilder/favicon/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/bilder/favicon/favicon-16x16.png">
     <link href="css/duDialog.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
 
 
     <meta name="msapplication-TileColor" content="#ffffff">
@@ -27,147 +28,6 @@
     
     <script src="js/duDialog.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <style>
-        body {
-            font-family: Roboto, sans-serif;
-            font-size: 17px;
-            margin: 0;
-        }
-
-        a:link { text-decoration: none; }
-        a:visited { text-decoration: none; }
-        a:hover { text-decoration: none; }
-        a:active { text-decoration: none; }
-
-       .button {
-           align-items: center;
-           appearance: none;
-           background-color: #fff;
-           border-radius: 24px;
-           border-style: none;
-           box-shadow: rgba(0, 0, 0, .2) 0 3px 5px -1px,rgba(0, 0, 0, .14) 0 6px 10px 0,rgba(0, 0, 0, .12) 0 1px 18px 0;
-           box-sizing: border-box;
-           color: #3c4043;
-           cursor: pointer;
-           display: inline-flex;
-           fill: currentcolor;
-           font-family: "Google Sans",Roboto,Arial,sans-serif;
-           font-size: 14px;
-           font-weight: 500;
-           height: 48px;
-           justify-content: center;
-           letter-spacing: .25px;
-           line-height: normal;
-           max-width: 100%;
-           overflow: visible;
-           padding: 2px 24px;
-           position: relative;
-           text-align: center;
-           text-transform: none;
-           transition: box-shadow 280ms cubic-bezier(.4, 0, .2, 1),opacity 15ms linear 30ms,transform 270ms cubic-bezier(0, 0, .2, 1) 0ms;
-           user-select: none;
-           -webkit-user-select: none;
-           touch-action: manipulation;
-           width: auto;
-           will-change: transform,opacity;
-           z-index: 0;
-           margin: 10px;
-       }
-
-        .button:hover {
-            background: #F6F9FE;
-            color: #174ea6;
-        }
-
-        .button:active {
-            box-shadow: 0 4px 4px 0 rgb(60 64 67 / 30%), 0 8px 12px 6px rgb(60 64 67 / 15%);
-            outline: none;
-        }
-
-        .button:focus {
-            outline: none;
-            border: 2px solid #4285f4;
-        }
-
-        .button:not(:disabled) {
-            box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
-        }
-
-        .button:not(:disabled):hover {
-            box-shadow: rgba(60, 64, 67, .3) 0 2px 3px 0, rgba(60, 64, 67, .15) 0 6px 10px 4px;
-        }
-
-        .button:not(:disabled):focus {
-            box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
-        }
-
-        .button:not(:disabled):active {
-            box-shadow: rgba(60, 64, 67, .3) 0 4px 4px 0, rgba(60, 64, 67, .15) 0 8px 12px 6px;
-        }
-
-        .button:disabled {
-            box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
-        }
-
-        .name {
-            width: 90%;
-            font-size: 1.2em;
-            max-width: 800px;
-            margin: 20px 10px 10px;
-            padding: 0;
-        }
-        .logo {
-            width: 90%;
-            max-width: 600px;
-            display: block;
-            margin-top: 10px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        #divider {
-            width: 100%;
-            height: 5vh;
-            background-image: url("bilder/diagonal_pattern.svg");
-            background-repeat: repeat-x;
-        }
-
-        #loader {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            border: 16px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 16px solid #3498db;
-            width: 100px;
-            height: 100px;
-            -webkit-animation: spin 2s linear infinite; /* Safari */
-            animation: spin 2s linear infinite;
-        }
-
-        /* Safari */
-        @-webkit-keyframes spin {
-            0% {
-                -webkit-transform-origin: 0 0;
-                -webkit-transform: translate(-50%, -50%) rotate(0deg);
-            }
-            100% {
-                -webkit-transform-origin: 0 0;
-                -webkit-transform: translate(-50%, -50%) rotate(360deg);
-            }
-        }
-
-        @keyframes spin {
-            0% {
-                transform-origin: 0 0;
-                transform: rotate(0deg) translate(-50%, -50%);
-            }
-            100% {
-                transform-origin: 0 0;
-                transform: rotate(360deg) translate(-50%, -50%);
-            }
-        }
-    </style>
 </head>
 <body>
 
@@ -180,7 +40,7 @@
         <span>
             <button onclick="getLocation()" class="button" id="submit"><p>Sticker speichern</p></button>
             <a href="/karte"><button class="button"><p class="buttontext">Karte</p></button></a>
-            <a href="/stats"><button class="button"><p class="buttontext">Statistik</p></button></a>
+            <a href="/bar_chart"><button class="button"><p class="buttontext">Statistik</p></button></a>
         </span>
     </div>
     <div id="loader" style="display: none"></div>
@@ -244,11 +104,23 @@
             const url = 'https://nominatim.openstreetmap.org/reverse?format=json&email=malte.now@gmx.de&zoom=10&lat=' + lat + '&lon=' + long;
             const response = await fetch(url);
             const myJson = await response.json(); //extract JSON from the http response
-            let city;
-            if (myJson.address.city === undefined) {
+            let city = myJson.address.city;
+            if (city === undefined) {
                 if (myJson.address.town === undefined) {
                     if (myJson.address.village === undefined) {
-                        city = myJson.address.state;
+                        if (myJson.address.municipality === undefined) {
+                            if (myJson.address.region === undefined) {
+                                if (myJson.address.county === undefined) {
+                                    city = myJson.address.state;
+                                } else {
+                                    city = myJson.address.county;
+                                }
+                            } else {
+                                city = myJson.address.region;
+                            }
+                        } else {
+                            city = myJson.address.municipality;
+                        }
                     } else {
                         city = myJson.address.village;
                     }
@@ -258,8 +130,16 @@
             } else {
                 city = myJson.address.city;
             }
+            let state = myJson.address.state;
+            if (state === undefined) {
+                if (myJson.address.state_district === undefined) {
+                    state = myJson.address.county;
+                } else {
+                    state = myJson.address.state_district;
+                }
+            }
 
-            return {city: city, state:myJson.address.state, country:myJson.address.country};
+            return {city: city, state: state, country:myJson.address.country};
         }
 
         function savePosition(position) {

@@ -38,16 +38,7 @@
 
     //add count per name
     while ($row = $resultarr[$i]) {
-        $names_raw = $row['name'];
-        //Regeln fuer Spitznamen
-        $spitznamen = array("Kahlin", "Khalin", "Janni", "Timouw", "Le Nerd", "TT", "Paul Klotzke", "LX", "Stefanie Nowatzky", "Piet Nowatzky", "Hansivader");
-        $klarnamen = array("Collin", "Collin", "Jan-Simon", "Timow", "Lennart", "Theresa", "Paul", "Henry", "Stefanie", "Piet", "Piet");
-        //ersetzen von Spitznamen
-        $names = str_replace($spitznamen, $klarnamen, $names_raw);
-        //Sonderfall Timo
-        if (stripos($names, "Timo ") !== false || strpos($names, " Timo") !== false || $names == "Timo") {
-            $names = str_replace("Timo", "Timof", $names);
-        }
+        $names = $row['name'];
 
         //mehrere Namen trennen
         $single_names = explode("&", $names);
@@ -108,7 +99,7 @@
 
     const xValues = getNames();
     const datasets = [{
-        backgroundColor: "#215dba",
+        backgroundColor: "#55B6FF",
         data: getCounts(),
         label: "Geklebte Sticker"
     }]
