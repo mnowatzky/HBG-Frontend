@@ -1,3 +1,7 @@
+:root {
+    --main-color: #55b6ff;
+}
+
 body {
     font-family: Roboto, sans-serif;
     font-size: 17px;
@@ -114,18 +118,36 @@ a:active { text-decoration: none; }
 
 .stat_int {
     font-size: 72pt;
-    color: #55B6FF;
+    color: var(--main-color);
     line-height: 100%;
     margin-left: 20px;
     margin-top: 10px;
     margin-bottom: 10px;
     padding: 0;
+    display: inline-block;
 }
 
 .stat_desc {
-    margin-top: 10px;
+    margin-top: 0;
     margin-left: 20px;
     padding: 0;
+}
+
+.change_arrow {
+    width: 50px;
+    height: 50px;
+    float: right;
+    margin-top: 50px;
+    margin-right: 10px;
+}
+
+.diff {
+    float: right;
+    margin-top: 40px;
+    margin-right: 10px;
+    margin-bottom: auto;
+    font-size: 36pt;
+    color: #00FF00;
 }
 
 #divider {
@@ -141,7 +163,7 @@ a:active { text-decoration: none; }
     top: 50%;
     border: 16px solid #f3f3f3;
     border-radius: 50%;
-    border-top: 16px solid #55B6FF;
+    border-top: 16px solid var(--main-color);
     width: 100px;
     height: 100px;
     -webkit-animation: spin 2s linear infinite; /* Safari */

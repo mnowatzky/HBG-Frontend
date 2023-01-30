@@ -23,50 +23,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <?php
-    //connection
-    include 'db_conn.php';
-    $conn = getConn();
+        //connection
+        include 'db_conn.php';
+        $conn = getConn();
 
-    $query = 'SELECT * FROM locations';
-    $result = mysqli_query($conn, $query) or die(mysqli_error($conn));
+        $query = 'SELECT * FROM locations';
+        $result = mysqli_query($conn, $query) or die(mysqli_error($conn));
 
-    //get sticker count
-    $resultarr = mysqli_fetch_all($result, MYSQLI_ASSOC);
-    $length = sizeof($resultarr);
-    $count_per_person = array("Malte" => 0);
-    $i = 0;
-
-    //add count per name
-    while ($row = $resultarr[$i]) {
-        $names = $row['name'];
-
-        //mehrere Namen trennen
-        $single_names = explode("&", $names);
-
-        //Alle Namen im Eintrag durchgehen
-        foreach ($single_names as $name) {
-            $trimmed_name = trim($name);
-            //checken, ob der Name vorhanden ist : sonst neuer Eintrag im Array
-            $found = false;
-            foreach ($count_per_person as $person => $count) {
-                if (strtoupper($person) === strtoupper($trimmed_name)) {
-                    $count_per_person[$trimmed_name]++;
-                    $found = true;
-                }
-            }
-            if (!$found) {
-                $count_per_person[$trimmed_name] = 1;
-            }
-        }
-
-        $i++;
-    }
-
-    //sort stats
-    arsort($count_per_person);
-    $conn->close();
+        //get sticker count
+        $resultarr = mysqli_fetch_all($result, MYSQLI_ASSOC);
+        $conn->close();
     ?>
 
+    <script>
+        function getStickers() {
+            <?php
+            echo "return [";
+            foreach ($resultarr as $row) {
+                echo '{name: "', $row['name'], '", lat: ', $row['latitude'], ', long: ', $row['longitude'],
+                ', city: "', $row['city'], '", state: "', $row['state'], '", country: "', $row['country'], '"},
+                ';
+            }
+            echo "];";
+            ?>
+        }
+
+        function get(name){
+            if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
+                return decodeURIComponent(name[1]);
+        }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -75,36 +61,50 @@
 <canvas id="stickerCount" style="width:100%;max-width:1000px"></canvas>
 
 <script>
-    function getNames() {
-        <?php
-        echo "return [";
-        foreach ($count_per_person as $person => $count) {
-            echo "'" . $person . "', ";
+    const data = get("data");
+
+    const stickers = getStickers();
+    let categoryCounts = new Map();
+
+    function populateCounts(item, idx, arr) {
+        if (data === "names") {
+            const sticker_names = item.name.split("&");
+            sticker_names.forEach(name => {
+                let trimmed_name = name.trim();
+                if (categoryCounts.has(trimmed_name)) {
+                    categoryCounts.set(trimmed_name, categoryCounts.get(trimmed_name) + 1);
+                } else {
+                    categoryCounts.set(trimmed_name, 1);
+                }
+            });
+        } else if (data === "countries") {
+            if (categoryCounts.has(item.country)) {
+                categoryCounts.set(item.country, categoryCounts.get(item.country) + 1);
+            } else {
+                categoryCounts.set(item.country, 1);
+            }
         }
-        echo "]";
-        ?>
     }
 
-    function getCounts() {
-        <?php
-        echo "return [";
-        foreach ($count_per_person as $person => $count) {
-            echo $count . ", ";
-        }
-        echo "]";
-        ?>
-    }
+    stickers.forEach(populateCounts);
+    document.getElementById('stickerCount').style.height = categoryCounts.size * 20 + 'px';
 
-    document.getElementById('stickerCount').style.height = getNames().length * 20 + 'px';
+    const sortedCounts = new Map([...categoryCounts].sort((a, b) => b[1] - a[1]));
 
-    const xValues = getNames();
+    const xValues = Array.from(sortedCounts.keys());
     const datasets = [{
-        backgroundColor: "#55B6FF",
-        data: getCounts(),
+        backgroundColor: "#55b6ff",
+        data: Array.from(sortedCounts.values()),
         label: "Geklebte Sticker"
     }]
 
     const ctx = document.getElementById("stickerCount").getContext("2d");
+    let title;
+    if (data === "names") {
+        title = "Geklebte Sticker pro Person";
+    } else if (data === "countries") {
+        title = "Geklebte Sticker pro Land";
+    }
 
     const stickerChart = new Chart(ctx, {
         type: "bar",
@@ -118,7 +118,7 @@
                 legend: {display: false},
                 title: {
                     display: true,
-                    text: "Geklebte Sticker pro Person",
+                    text: title,
                 }
             }
         },
@@ -131,14 +131,14 @@
                     let yVal = y.getLabelForValue(y.getValueForPixel(args.event.y))
                     //console.log('value: ' + value + ', rounded: ' + Math.round(value) + ', x label: ' + yVal);
                     if (value < 0) {
-                        window.open("https://intern.diehbg.de/karte?name=" + yVal, "Karte")
+                        if (data === "names") {
+                            window.open("https://intern.diehbg.de/karte?name=" + yVal, "Karte")
+                        }
                     }
                 }
             }
         }]
     });
 </script>
-
-<p style="font-family: Roboto, sans-serif; font-size: 17px;">Anzahl Sticker gesamt: <?php echo $length ?></p>
 </body>
 </html>
