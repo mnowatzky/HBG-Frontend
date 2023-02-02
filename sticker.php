@@ -28,39 +28,8 @@
     
     <script src="js/duDialog.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-</head>
-<body>
-
-    <div id="content" style="filter: none">
-        <img src="bilder/Sticker_header.svg" class="logo" alt="HBG Logo"><br>
-        <div id="divider"></div>
-        <input type="text" id="name" name="name" placeholder="Name (max. 30 Zeichen)" class="name"><br>
-        <label for="name" style="margin: 10px">Mehrere Namen mit "&" trennen</label>
-        <br>
-        <span>
-            <button onclick="getLocation()" class="button" id="submit"><p>Sticker speichern</p></button>
-            <a href="/karte"><button class="button"><p class="buttontext">Karte</p></button></a>
-            <a href="/bar_chart"><button class="button"><p class="buttontext">Statistik</p></button></a>
-        </span>
-    </div>
-    <div id="loader" style="display: none"></div>
-
 
     <script>
-        // Get the input field
-        const input = document.getElementById("name");
-
-        // Execute a function when the user releases a key on the keyboard
-        input.addEventListener("keyup", function(event) {
-          // Number 13 is the "Enter" key on the keyboard
-          if (event.keyCode === 13) {
-            // Cancel the default action, if needed
-            event.preventDefault();
-            // Trigger the button element with a click
-            document.getElementById("submit").click();
-          }
-        });
-
         function showLoading() {
             document.getElementById('loader').style.display = 'block';
             document.getElementById("submit").disabled = true;
@@ -176,6 +145,22 @@
         }
 
     </script>
+</head>
+<body>
+
+    <div id="content">
+        <img src="bilder/Sticker_header.svg" class="logo" alt="HBG Logo"><br>
+        <div id="divider"></div>
+        <input type="text" id="name" name="name" placeholder="Name (max. 30 Zeichen)" class="name"><br>
+        <label for="name" style="margin: 10px">Mehrere Namen mit "&" trennen</label>
+        <br>
+        <span>
+            <button onclick="getLocation()" class="button" id="submit"><p>Sticker speichern</p></button>
+            <a href="/karte"><button class="button"><p class="buttontext">Karte</p></button></a>
+            <a href="/stats"><button class="button"><p class="buttontext">Statistik</p></button></a>
+        </span>
+    </div>
+    <div id="loader" style="display: none"></div>
 
 </body>
 </html>
