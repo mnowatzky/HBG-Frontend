@@ -94,7 +94,7 @@
     mapboxgl.accessToken = 'pk.eyJ1IjoicGl4bHBhaW50ZXIiLCJhIjoiY2p1bWV5ZjVtMHZiaDRmbDg3cW1ubmx3NCJ9.X5FRsatkHE11P2Zwk8zN0w';
     const clientHeight = Math.min(document.getElementById('static').clientHeight, 1280);
     const clientWidth = Math.min(document.getElementById('static').clientWidth, 1280);
-    const staticImg = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${getNewestStickerCoords()[0]},`
+    const staticImg = `https://api.mapbox.com/styles/v1/pixlpainter/clda7ilh1000i01ofotpgomzu/static/${getNewestStickerCoords()[0]},`
         + `${getNewestStickerCoords()[1]},5/${clientWidth}x${clientHeight}@2x?logo=false&access_token=${mapboxgl.accessToken}`;
 
     document.getElementById("static").style.backgroundImage = `url(${staticImg})`;
