@@ -122,18 +122,36 @@
 
         }
 
+        function pluralizeDesc(descIdx, count) {
+            const singular = ["geklebter Sticker", "beklebte Stadt", "erobertes Land", "Stickerverteiler"];
+            const plural = ["geklebte Sticker", "beklebte Städte", "eroberte Länder", "Stickerverteiler"];
+            const descIds = ["sticker_desc", "city_desc", "country_desc", "name_desc"];
+
+            if (count === 1) {
+                document.getElementById(descIds[descIdx]).innerText = singular[descIdx];
+            } else {
+                document.getElementById(descIds[descIdx]).innerText = plural[descIdx];
+            }
+        }
+
         function switchStats() {
             const monthly = document.getElementById("timeswitcher").checked;
 
             if (monthly) {
-                //change all texts with class time_frame to "Diesen Monat"
-                document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "Diesen Monat");
+                //change all texts with class time_frame to "im {current month}"
+                document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "im " + d.toLocaleString('default', { month: 'long' }));
 
                 //show monthly counts
                 document.getElementById("stickercount").innerText = stickerCount.currMonth;
-                document.getElementById("citycount").innerText = cities.currMonth.size;
-                document.getElementById("countrycount").innerText = countries.currMonth.size;
-                document.getElementById("namecount").innerText = names.currMonth.size;
+                document.getElementById("citycount").innerText = cities.currMonth.size.toString();
+                document.getElementById("countrycount").innerText = countries.currMonth.size.toString();
+                document.getElementById("namecount").innerText = names.currMonth.size.toString();
+
+                //pluralize the descriptions
+                pluralizeDesc(0, stickerCount.currMonth);
+                pluralizeDesc(1, cities.currMonth.size);
+                pluralizeDesc(2, countries.currMonth.size);
+                pluralizeDesc(3, names.currMonth.size);
 
                 //show difference to last month
                 document.querySelectorAll(".diff").forEach(diff => diff.style.visibility = "visible");
@@ -144,9 +162,15 @@
 
                 //show total counts
                 document.getElementById("stickercount").innerText = stickerCount.total;
-                document.getElementById("citycount").innerText = cities.total.size;
-                document.getElementById("countrycount").innerText = countries.total.size;
-                document.getElementById("namecount").innerText = names.total.size;
+                document.getElementById("citycount").innerText = cities.total.size.toString();
+                document.getElementById("countrycount").innerText = countries.total.size.toString();
+                document.getElementById("namecount").innerText = names.total.size.toString();
+
+                //pluralize the descriptions
+                pluralizeDesc(0, stickerCount.total);
+                pluralizeDesc(1, cities.total.size);
+                pluralizeDesc(2, countries.total.size);
+                pluralizeDesc(3, names.total.size);
 
                 //hide difference to last month
                 document.querySelectorAll(".diff").forEach(diff => diff.style.visibility = "hidden");
@@ -155,8 +179,6 @@
         }
 
         window.onload = function () {
-            document.getElementById("thismonth").innerText = "im " + d.toLocaleString('default', { month: 'long' });
-
             document.getElementById("stickercount").innerText = stickerCount.total;
             document.getElementById("citycount").innerText = cities.total.size.toString();
             document.getElementById("countrycount").innerText = countries.total.size.toString();
@@ -189,28 +211,28 @@
         <p id="stickercount" class="stat_int"></p>
         <p id="total_diff" class="diff"></p>
         <img src="data:," alt class="change_arrow" id="total_arrow" style="visibility: hidden;">
-        <p class="stat_desc">geklebte Sticker</p>
+        <p class="stat_desc" id="sticker_desc">geklebte Sticker</p>
     </a>
     <a class="card">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="citycount" class="stat_int"></p>
         <p id="city_diff" class="diff"></p>
         <img src="data:," alt class="change_arrow" id="city_arrow" style="visibility: hidden;">
-        <p class="stat_desc">beklebte Städte</p>
+        <p class="stat_desc" id="city_desc">beklebte Städte</p>
     </a>
     <a class="card" href="/bar_chart?data=countries">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="countrycount" class="stat_int"></p>
         <p id="country_diff" class="diff"></p>
         <img src="data:," alt class="change_arrow" id="country_arrow" style="visibility: hidden;">
-        <p class="stat_desc">eroberte Länder</p>
+        <p class="stat_desc" id="country_desc">eroberte Länder</p>
     </a>
     <a class="card" href="/bar_chart?data=names">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="namecount" class="stat_int"></p>
         <p id="name_diff" class="diff"></p>
         <img src="data:," alt class="change_arrow" id="name_arrow" style="visibility: hidden;">
-        <p class="stat_desc">Stickerverteiler</p>
+        <p class="stat_desc" id="name_desc">Stickerverteiler</p>
     </a>
 </div>
 

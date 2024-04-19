@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <title>HBG Sticker</title>
 
@@ -16,7 +16,6 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/bilder/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="96x96" href="/bilder/favicon/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/bilder/favicon/favicon-16x16.png">
-    <link href="css/duDialog.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/main.css">
 
 
@@ -26,10 +25,30 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <script src="js/duDialog.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="js/sweetalert2.all.min.js"></script>
 
     <script>
+        function showError(msg) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Fehler',
+                text: msg,
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'Abbrechen'
+            });
+        }
+
+        function showSuccess(msg) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Fertig',
+                text: msg,
+                confirmButtonColor: '#55b6ff',
+            });
+        }
+
         function showLoading() {
             document.getElementById('loader').style.display = 'block';
             document.getElementById("submit").disabled = true;
@@ -45,13 +64,13 @@
         function getLocation() {
             const name = document.getElementById("name").value;
 
-            //check if name is empty
+            //check name presence and length
             if (!name.trim()) {
-                new duDialog('Fehler', 'Bitte gib einen Namen ein!');
+                showError('Bitte gib einen Namen ein!');
             } else if (name.length > 30) {
-            	new duDialog('Fehler', 'Der Name ist zu lang!');
+                showError('Der Name ist zu lang!');
             } else if (!navigator.onLine) {
-            	new duDialog('Fehler', 'Du bist nicht online!');
+                showError('Du bist nicht online!');
             }
             else {
                 //get location
@@ -60,16 +79,18 @@
                     const locationOptions = {maximumAge:600000, timeout:5000, enableHighAccuracy: true};
                     navigator.geolocation.getCurrentPosition(savePosition,errorCallback_high_accuracy,locationOptions);
                 } else {
-                    new duDialog('Fehler', 'Standort kann nicht ermittelt werden');
+                    showError('Standort kann nicht ermittelt werden');
                 }
             }
         }
 
         function errorCallback_high_accuracy(error) {
-            new duDialog('Fehler', 'Hohe Standortgenauigkeit fehlgeschlagen');
+            hideLoading();
+            showError('Hohe Standortgenauigkeit fehlgeschlagen');
         }
 
         const reverseGeocode = async (lat, long) => {
+            const stadtstaaten = ['Hamburg', 'Bremen', 'Berlin'];
             const url = 'https://nominatim.openstreetmap.org/reverse?format=json&email=malte.now@gmx.de&zoom=10&lat=' + lat + '&lon=' + long;
             const response = await fetch(url);
             const myJson = await response.json(); //extract JSON from the http response
@@ -107,6 +128,9 @@
                     state = myJson.address.state_district;
                 }
             }
+            if (stadtstaaten.includes(city)) {
+                state = city;
+            }
 
             return {city: city, state: state, country:myJson.address.country};
         }
@@ -134,9 +158,9 @@
                     success:function(data){
                         hideLoading();
                         if (data == "Sticker gespeichert") {
-                            new duDialog('Fertig', data);
+                            showSuccess(data);
                         } else {
-                            new duDialog('Fehler', data);
+                            showError(data);
                         }
 
                     }
