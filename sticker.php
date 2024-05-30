@@ -29,6 +29,8 @@
     <script src="js/sweetalert2.all.min.js"></script>
 
     <script>
+        const MAX_NAME_LENGTH = 75;
+
         function showError(msg) {
             Swal.fire({
                 icon: 'error',
@@ -67,7 +69,7 @@
             //check name presence and length
             if (!name.trim()) {
                 showError('Bitte gib einen Namen ein!');
-            } else if (name.length > 30) {
+            } else if (name.length > MAX_NAME_LENGTH) {
                 showError('Der Name ist zu lang!');
             } else if (!navigator.onLine) {
                 showError('Du bist nicht online!');
