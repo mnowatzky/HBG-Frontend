@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HBG Karte</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="/bilder/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/bilder/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bilder/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/bilder/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bilder/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/bilder/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/bilder/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/bilder/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/bilder/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/bilder/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/bilder/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/bilder/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/bilder/favicon/favicon-16x16.png">
+
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.css' rel='stylesheet' />
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #static {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background-size: 100% 100%;
+        }
+
+        .marker {
+            display: block;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            background-image: url("/bilder/hbg-marker.svg");
+            background-size: cover;
+            width: 30px;
+            height: 30px;
+        }
+    </style>
+</head>
+<body>
+<!-- Load the `mapbox-gl-geocoder` plugin. -->
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet"
+      href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.css"
+      type="text/css">
+
+<div id='map'></div>
+<div id="static"></div>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoicGl4bHBhaW50ZXIiLCJhIjoiY2p1bWV5ZjVtMHZiaDRmbDg3cW1ubmx3NCJ9.X5FRsatkHE11P2Zwk8zN0w';
+    const clientHeight = Math.min(document.getElementById('static').clientHeight, 1280);
+    const clientWidth = Math.min(document.getElementById('static').clientWidth, 1280);
+    const markerHeight = 25;
+    const popupOffsets = {'bottom': [0, -markerHeight]};
+    
+    fetchAsync("http://localhost:8000/stickers?format=geojson").then(stickers => {
+        let long;
+        let lat;
+        // Check if there are any stickers available
+        if (stickers.data.features.length > 0) {
+            const newest_sticker = stickers.data.features.at(-1);
+            long = newest_sticker.geometry.coordinates[0];
+            lat = newest_sticker.geometry.coordinates[1];
+        } else {
+            // Default coordinates if no stickers are available
+            long = 10.4541194;
+            lat = 51.1642292;
+        }
+        const staticImgUrl = `https://api.mapbox.com/styles/v1/pixlpainter/clda7ilh1000i01ofotpgomzu/static/${long},`
+            + `${lat},5/${clientWidth}x${clientHeight}@2x?logo=false&access_token=${mapboxgl.accessToken}`;
+    
+        // document.getElementById("static").style.backgroundImage = `url(${staticImgUrl})`;
+        const map = new mapboxgl.Map({
+            container: 'map', // container ID
+            style: 'mapbox://styles/pixlpainter/clda7ilh1000i01ofotpgomzu', // style URL
+            center: [long, lat], // starting position [lng, lat]
+            zoom: 5, // starting zoom
+            attributionControl: false
+        });
+        // Add search control to the map.
+        map.addControl(
+            new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl
+            })
+        );
+        // zoom map to user location control
+        map.addControl(new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true,
+            showUserHeading: true
+        }));
+        // add fullscreen control
+        map.addControl(new mapboxgl.FullscreenControl({
+            container: document.querySelector('body')
+        }));
+        // Add zoom and rotation controls to the map.
+        map.addControl(new mapboxgl.NavigationControl());
+        map.on('load', () => {
+            // Add source for marker geo data
+            map.addSource('stickers', stickers);
+            // Add a symbol layer for HBG markers
+            map.addLayer({
+                'id': 'stickers',
+                'type': 'symbol',
+                'source': 'stickers',
+                'layout': {
+                    'icon-image': 'hbg-marker',
+                    'icon-allow-overlap': true,
+                    'icon-anchor': 'bottom',
+                    'icon-size': 0.3,
+                    'icon-padding': 0
+                }
+            });
+            //open Popup for newest sticker
+            if (stickers.data.features.length > 0) {
+                newest_sticker = stickers.data.features.at(-1);
+                new mapboxgl.Popup({offset: popupOffsets})
+                    .setLngLat([newest_sticker.geometry.coordinates[0], newest_sticker.geometry.coordinates[1]])
+                    .setHTML(`<b>Neuster Sticker</b><br>von ${newest_sticker.properties.name}`)
+                    .addTo(map);
+            }
+            // show Stickercount
+            map.addControl(new mapboxgl.AttributionControl({
+                customAttribution: `Sticker gesamt: ${stickers.data.features.length}`
+            }));
+
+            // When a click event occurs on a feature in the stickers layer, open a popup at the
+            // location of the feature, with description HTML from its properties.
+            map.on('click', 'stickers', (e) => {
+                // Copy coordinates array.
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const index = stickers.data.features.findIndex(sticker => sticker.properties.id === e.features[0].properties.id);
+                const description = makePopupDescription(e.features[0].properties, index, stickers.data.features.length);
+    
+                // Ensure that if the map is zoomed out such that multiple
+                // copies of the feature are visible, the popup appears
+                // over the copy being pointed to.
+                if (['mercator', 'equirectangular'].includes(map.getProjection().name)) {
+                    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                    }
+                }
+                // add Popup
+                new mapboxgl.Popup({offset: popupOffsets})
+                    .setLngLat(coordinates)
+                    .setHTML(description)
+                    .addTo(map);
+            });
+    
+            // Change the cursor to a pointer when the mouse is over the places layer.
+            map.on('mouseenter', 'stickers', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+    
+            // Change it back when it leaves.
+            map.on('mouseleave', 'stickers', () => {
+                map.getCanvas().style.cursor = '';
+            });
+    
+            //swap static image with dynamic map
+            document.getElementById("static").style.visibility = 'hidden';
+        });
+    });
+
+    function makePopupDescription (sticker, index, count) {
+        index++;
+        if (index === count) {
+            return `<b>Neuster Sticker</b><br>von ${sticker.name}`;
+        } else if (index % 100 === 0 || index === 1) {
+            return `<b>Sticker Nr. ${index}</b><br>von ${sticker.name}`;
+        } else if (index === 69) {
+            return `<b>Sticker Nr. ${index}</b><br>von ${sticker.name} (nice)`;
+        }
+        else {
+            return `Von ${sticker.name}`;
+        }
+    }
+
+    async function fetchAsync (url) {
+        const response = await fetch(url);
+        return await response.json();
+    }
+</script>
+</body>
+</html>
