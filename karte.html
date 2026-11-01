@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+    <meta charset="utf-8">
     <title>HBG Karte</title>
 
     <link rel="apple-touch-icon" sizes="57x57" href="/bilder/favicon/apple-icon-57x57.png">
@@ -22,8 +24,9 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 
-    <script src='https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v3.11.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css' rel='stylesheet' />
+    <script src="js/api.js"></script>
 
     <style>
         body {
@@ -37,14 +40,19 @@
             bottom: 0;
             width: 100%;
         }
-        #static {
+
+        #load_error {
+            display: none;
             position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-            height: 100%;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 1;
-            background-size: 100% 100%;
+            padding: 8px 16px;
+            border-radius: 4px;
+            background: #ffffff;
+            color: #c00000;
+            font-family: sans-serif;
         }
 
         .marker {
@@ -59,153 +67,172 @@
         }
     </style>
 </head>
+
 <body>
-<!-- Load the `mapbox-gl-geocoder` plugin. -->
-<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
-<link rel="stylesheet"
-      href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.css"
-      type="text/css">
+    <!-- Load the `mapbox-gl-geocoder` plugin. -->
+    <script
+        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet"
+        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.css"
+        type="text/css">
 
-<div id='map'></div>
-<div id="static"></div>
+    <div id='map'></div>
+    <div id="load_error">Sticker konnten nicht geladen werden</div>
 
-<script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoicGl4bHBhaW50ZXIiLCJhIjoiY2p1bWV5ZjVtMHZiaDRmbDg3cW1ubmx3NCJ9.X5FRsatkHE11P2Zwk8zN0w';
-    const clientHeight = Math.min(document.getElementById('static').clientHeight, 1280);
-    const clientWidth = Math.min(document.getElementById('static').clientWidth, 1280);
-    const markerHeight = 25;
-    const popupOffsets = {'bottom': [0, -markerHeight]};
-    
-    fetchAsync("http://localhost:8000/stickers?format=geojson").then(stickers => {
-        let long;
-        let lat;
-        // Check if there are any stickers available
-        if (stickers.data.features.length > 0) {
-            const newest_sticker = stickers.data.features.at(-1);
-            long = newest_sticker.geometry.coordinates[0];
-            lat = newest_sticker.geometry.coordinates[1];
-        } else {
-            // Default coordinates if no stickers are available
-            long = 10.4541194;
-            lat = 51.1642292;
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoicGl4bHBhaW50ZXIiLCJhIjoiY2p1bWV5ZjVtMHZiaDRmbDg3cW1ubmx3NCJ9.X5FRsatkHE11P2Zwk8zN0w';
+        const markerHeight = 25;
+        const popupOffsets = { 'bottom': [0, -markerHeight] };
+
+        // bar_chart links here with ?name= to show the stickers of one person
+        const selectedName = new URLSearchParams(window.location.search).get('name');
+        const stickerQuery = { format: 'geojson', ...(selectedName && { name: selectedName }) };
+
+        function showLoadError(error) {
+            console.error(error);
+            document.getElementById('load_error').style.display = 'block';
         }
-        const staticImgUrl = `https://api.mapbox.com/styles/v1/pixlpainter/clda7ilh1000i01ofotpgomzu/static/${long},`
-            + `${lat},5/${clientWidth}x${clientHeight}@2x?logo=false&access_token=${mapboxgl.accessToken}`;
-    
-        // document.getElementById("static").style.backgroundImage = `url(${staticImgUrl})`;
-        const map = new mapboxgl.Map({
-            container: 'map', // container ID
-            style: 'mapbox://styles/pixlpainter/clda7ilh1000i01ofotpgomzu', // style URL
-            center: [long, lat], // starting position [lng, lat]
-            zoom: 5, // starting zoom
-            attributionControl: false
-        });
-        // Add search control to the map.
-        map.addControl(
-            new MapboxGeocoder({
-                accessToken: mapboxgl.accessToken,
-                mapboxgl: mapboxgl
-            })
-        );
-        // zoom map to user location control
-        map.addControl(new mapboxgl.GeolocateControl({
-            positionOptions: {
-                enableHighAccuracy: true
-            },
-            trackUserLocation: true,
-            showUserHeading: true
-        }));
-        // add fullscreen control
-        map.addControl(new mapboxgl.FullscreenControl({
-            container: document.querySelector('body')
-        }));
-        // Add zoom and rotation controls to the map.
-        map.addControl(new mapboxgl.NavigationControl());
-        map.on('load', () => {
-            // Add source for marker geo data
-            map.addSource('stickers', stickers);
-            // Add a symbol layer for HBG markers
-            map.addLayer({
-                'id': 'stickers',
-                'type': 'symbol',
-                'source': 'stickers',
-                'layout': {
-                    'icon-image': 'hbg-marker',
-                    'icon-allow-overlap': true,
-                    'icon-anchor': 'bottom',
-                    'icon-size': 0.3,
-                    'icon-padding': 0
-                }
-            });
-            //open Popup for newest sticker
-            if (stickers.data.features.length > 0) {
-                newest_sticker = stickers.data.features.at(-1);
-                new mapboxgl.Popup({offset: popupOffsets})
-                    .setLngLat([newest_sticker.geometry.coordinates[0], newest_sticker.geometry.coordinates[1]])
-                    .setHTML(`<b>Neuster Sticker</b><br>von ${newest_sticker.properties.name}`)
-                    .addTo(map);
+
+        fetchStickers({ ...stickerQuery, limit: 1 }).catch(error => {
+            showLoadError(error);
+            return { stickers: [], total: 0 };
+        }).then(({ stickers: newestStickers, total }) => {
+            const newest_sticker = newestStickers[0];
+            let long;
+            let lat;
+            // Check if there are any stickers available
+            if (newest_sticker) {
+                long = newest_sticker.geometry.coordinates[0];
+                lat = newest_sticker.geometry.coordinates[1];
+            } else {
+                // Default coordinates if no stickers are available
+                long = 10.4541194;
+                lat = 51.1642292;
             }
-            // show Stickercount
-            map.addControl(new mapboxgl.AttributionControl({
-                customAttribution: `Sticker gesamt: ${stickers.data.features.length}`
+
+            const map = new mapboxgl.Map({
+                container: 'map', // container ID
+                style: 'mapbox://styles/pixlpainter/clda7ilh1000i01ofotpgomzu', // style URL
+                center: [long, lat], // starting position [lng, lat]
+                zoom: 5, // starting zoom
+                attributionControl: false
+            });
+            // Add search control to the map.
+            map.addControl(
+                new MapboxGeocoder({
+                    accessToken: mapboxgl.accessToken,
+                    mapboxgl: mapboxgl
+                })
+            );
+            // zoom map to user location control
+            map.addControl(new mapboxgl.GeolocateControl({
+                positionOptions: {
+                    enableHighAccuracy: true
+                },
+                trackUserLocation: true,
+                showUserHeading: true
             }));
-
-            // When a click event occurs on a feature in the stickers layer, open a popup at the
-            // location of the feature, with description HTML from its properties.
-            map.on('click', 'stickers', (e) => {
-                // Copy coordinates array.
-                const coordinates = e.features[0].geometry.coordinates.slice();
-                const index = stickers.data.features.findIndex(sticker => sticker.properties.id === e.features[0].properties.id);
-                const description = makePopupDescription(e.features[0].properties, index, stickers.data.features.length);
-    
-                // Ensure that if the map is zoomed out such that multiple
-                // copies of the feature are visible, the popup appears
-                // over the copy being pointed to.
-                if (['mercator', 'equirectangular'].includes(map.getProjection().name)) {
-                    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-                        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            // add fullscreen control
+            map.addControl(new mapboxgl.FullscreenControl({
+                container: document.querySelector('body')
+            }));
+            // Add zoom and rotation controls to the map.
+            map.addControl(new mapboxgl.NavigationControl());
+            map.on('load', () => {
+                // Add source for marker geo data
+                map.addSource('stickers', { type: 'geojson', data: { type: "FeatureCollection", features: newestStickers } });
+                // Add a symbol layer for HBG markers
+                map.addLayer({
+                    'id': 'stickers',
+                    'type': 'symbol',
+                    'source': 'stickers',
+                    'layout': {
+                        'icon-image': 'hbg-marker',
+                        'icon-allow-overlap': true,
+                        'icon-anchor': 'bottom',
+                        'icon-size': 0.3,
+                        'icon-padding': 0
                     }
+                });
+                //open Popup for newest sticker
+                if (newest_sticker) {
+                    new mapboxgl.Popup({ offset: popupOffsets })
+                        .setLngLat([newest_sticker.geometry.coordinates[0], newest_sticker.geometry.coordinates[1]])
+                        .setHTML(makePopupDescription(newest_sticker.properties, total, total))
+                        .addTo(map);
                 }
-                // add Popup
-                new mapboxgl.Popup({offset: popupOffsets})
-                    .setLngLat(coordinates)
-                    .setHTML(description)
-                    .addTo(map);
+
+                // asynchronously fetch all stickers and update source data paginated
+                const stickerNumbers = new Map(newestStickers.map(sticker => [sticker.properties.id, total]));
+
+                (async () => {
+                    const allStickers = [];
+                    for await (const page of fetchAllStickers(stickerQuery)) {
+                        for (const sticker of page) {
+                            // pages arrive newest first, so the position gives the number
+                            stickerNumbers.set(sticker.properties.id, total - allStickers.length);
+                            allStickers.push(sticker);
+                        }
+                        map.getSource('stickers').setData({ type: "FeatureCollection", features: allStickers });
+                    }
+                })().catch(showLoadError);
+
+                // show Stickercount
+                map.addControl(new mapboxgl.AttributionControl({
+                    customAttribution: `Sticker gesamt: ${total}`
+                }));
+
+                // When a click event occurs on a feature in the stickers layer, open a popup at the
+                // location of the feature, with description HTML from its properties.
+                map.on('click', 'stickers', (e) => {
+                    // Copy coordinates array.
+                    const coordinates = e.features[0].geometry.coordinates.slice();
+                    const number = stickerNumbers.get(e.features[0].properties.id);
+                    const description = makePopupDescription(e.features[0].properties, number, total);
+
+                    // Ensure that if the map is zoomed out such that multiple
+                    // copies of the feature are visible, the popup appears
+                    // over the copy being pointed to.
+                    if (['mercator', 'equirectangular'].includes(map.getProjection().name)) {
+                        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                        }
+                    }
+                    // add Popup
+                    new mapboxgl.Popup({ offset: popupOffsets })
+                        .setLngLat(coordinates)
+                        .setHTML(description)
+                        .addTo(map);
+                });
+
+                // Change the cursor to a pointer when the mouse is over the places layer.
+                map.on('mouseenter', 'stickers', () => {
+                    map.getCanvas().style.cursor = 'pointer';
+                });
+
+                // Change it back when it leaves.
+                map.on('mouseleave', 'stickers', () => {
+                    map.getCanvas().style.cursor = '';
+                });
             });
-    
-            // Change the cursor to a pointer when the mouse is over the places layer.
-            map.on('mouseenter', 'stickers', () => {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-    
-            // Change it back when it leaves.
-            map.on('mouseleave', 'stickers', () => {
-                map.getCanvas().style.cursor = '';
-            });
-    
-            //swap static image with dynamic map
-            document.getElementById("static").style.visibility = 'hidden';
         });
-    });
 
-    function makePopupDescription (sticker, index, count) {
-        index++;
-        if (index === count) {
-            return `<b>Neuster Sticker</b><br>von ${sticker.name}`;
-        } else if (index % 100 === 0 || index === 1) {
-            return `<b>Sticker Nr. ${index}</b><br>von ${sticker.name}`;
-        } else if (index === 69) {
-            return `<b>Sticker Nr. ${index}</b><br>von ${sticker.name} (nice)`;
+        function makePopupDescription(sticker, number, count) {
+            const name = escapeHtml(sticker.name);
+            if (number === count) {
+                return `<b>Neuster Sticker</b><br>von ${name}`;
+            } else if (number % 100 === 0 || number === 1) {
+                return `<b>Sticker Nr. ${number}</b><br>von ${name}`;
+            } else if (number === 69) {
+                return `<b>Sticker Nr. ${number}</b><br>von ${name} (nice)`;
+            } else if (number === 420) {
+                return `<b>420 blaze it</b><br>von ${name}`;
+            }
+            else {
+                return `Von ${name}`;
+            }
         }
-        else {
-            return `Von ${sticker.name}`;
-        }
-    }
-
-    async function fetchAsync (url) {
-        const response = await fetch(url);
-        return await response.json();
-    }
-</script>
+    </script>
 </body>
+
 </html>

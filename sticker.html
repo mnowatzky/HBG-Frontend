@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+    <meta charset="utf-8">
     <title>HBG Sticker</title>
 
     <link rel="apple-touch-icon" sizes="57x57" href="/bilder/favicon/apple-icon-57x57.png">
@@ -27,6 +28,7 @@
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="js/sweetalert2.all.min.js"></script>
+    <script src="js/api.js"></script>
 
     <script>
         const MAX_NAME_LENGTH = 75;
@@ -96,6 +98,8 @@
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&email=malte.now@gmx.de&zoom=10&lat=${lat}&lon=${long}`;
             const response = await fetch(url);
             const myJson = await response.json(); //extract JSON from the http response
+            //nominatim has no address for places like the open sea
+            myJson.address ??= {};
             let city = myJson.address.city;
             if (city === undefined) {
                 if (myJson.address.town === undefined) {
@@ -145,7 +149,7 @@
             //asynchronously get city, state and country from coords and save into database
             reverseGeocode(lat, long).then(function (address) {
                 //insert variables into database
-                fetch("http://localhost:8000/stickers", {
+                return fetch(`${API_BASE_URL}/stickers`, {
                     method: "POST",
                     body: JSON.stringify({
                         latitude: lat,
@@ -153,29 +157,27 @@
                         name: name,
                         city: address.city,
                         state: address.state,
-                        country: address.country,
-                        date: new Date().toISOString()
+                        country: address.country
                     }),
                     headers: {
                         "Content-type": "application/json; charset=UTF-8"
                     }
-                }).then(function (response) {
-                    if (response.ok) {
-                        response.json().then(function (data) {
-                            hideLoading();
-                            showSuccess('Sticker gespeichert!');
-                            // setTimeout(() => {
-                            //     window.location.href = "/karte";
-                            // }, 2000);
-                        });
-                    } else {
-                        hideLoading();
-                        showError('Sticker konnte nicht gespeichert werden!');
-                    }
-                }).catch(function (error) {
-                    hideLoading();
-                    showError('Sticker konnte nicht gespeichert werden!');
                 });
+            }).then(function (response) {
+                hideLoading();
+                if (response.ok) {
+                    showSuccess('Sticker gespeichert!');
+                    // setTimeout(() => {
+                    //     window.location.href = "/karte";
+                    // }, 2000);
+                } else if (response.status === 429) {
+                    showError('Zu viele Sticker auf einmal, versuch es gleich nochmal!');
+                } else {
+                    showError('Sticker konnte nicht gespeichert werden!');
+                }
+            }).catch(function (error) {
+                hideLoading();
+                showError('Sticker konnte nicht gespeichert werden!');
             });
         }
     </script>
@@ -185,7 +187,7 @@
     <div id="content">
         <img src="bilder/Sticker_header.svg" class="logo" alt="HBG Logo"><br>
         <div id="divider"></div>
-        <input type="text" id="name" name="name" placeholder="Name (max. 30 Zeichen)" class="name"><br>
+        <input type="text" id="name" name="name" placeholder="Name (max. 75 Zeichen)" class="name"><br>
         <label for="name" style="margin: 10px">Mehrere Namen mit "&" trennen</label>
         <br>
         <span>
