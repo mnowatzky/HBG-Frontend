@@ -51,3 +51,7 @@ git push --follow-tags
 ```
 
 Then set `FRONTEND_TAG` on the server, as described under [updates](https://github.com/mnowatzky/HBG-Fast-API#updates-and-rollback).
+
+## License
+
+The code is under the [MIT License](LICENSE). The HBG name and logo and the images in [`bilder/`](bilder/) are not covered by it; all rights to them are reserved.
