@@ -24,14 +24,28 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 
-    <script src='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js'></script>
+    <script defer src='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css' rel='stylesheet' />
+    <!-- Load the `mapbox-gl-geocoder` plugin. -->
+    <script defer
+        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet"
+        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.css"
+        type="text/css">
     <script src="js/api.js"></script>
 
     <style>
         body {
             margin: 0;
             padding: 0;
+        }
+
+        #static {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            background: hsl(200, 100%, 80%) center no-repeat;
         }
 
         #map {
@@ -69,18 +83,12 @@
 </head>
 
 <body>
-    <!-- Load the `mapbox-gl-geocoder` plugin. -->
-    <script
-        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.min.js"></script>
-    <link rel="stylesheet"
-        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.css"
-        type="text/css">
-
+    <div id="static"></div>
     <div id='map'></div>
     <div id="load_error">Sticker konnten nicht geladen werden</div>
 
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoicGl4bHBhaW50ZXIiLCJhIjoiY2p1bWV5ZjVtMHZiaDRmbDg3cW1ubmx3NCJ9.X5FRsatkHE11P2Zwk8zN0w';
+        const mapboxToken = 'pk.eyJ1IjoicGl4bHBhaW50ZXIiLCJhIjoiY2p1bWV5ZjVtMHZiaDRmbDg3cW1ubmx3NCJ9.X5FRsatkHE11P2Zwk8zN0w';
         const markerHeight = 25;
         const popupOffsets = { 'bottom': [0, -markerHeight] };
 
@@ -93,29 +101,43 @@
             document.getElementById('load_error').style.display = 'block';
         }
 
-        fetchStickers({ ...stickerQuery, limit: 1 }).catch(error => {
+        function getMapCenter(newest_sticker) {
+            // Default coordinates if no stickers are available
+            return newest_sticker ? newest_sticker.geometry.coordinates : [10.4541194, 51.1642292];
+        }
+
+        // A picture of the map to look at while the Mapbox library loads. Not @2x, which is
+        // bigger than the library. The API allows up to 1280 px, so it stays at its real size
+        // to line up with the map on larger screens.
+        function showStaticMap([long, lat]) {
+            const element = document.getElementById('static');
+            const width = Math.min(element.clientWidth, 1280);
+            const height = Math.min(element.clientHeight, 1280);
+            element.style.backgroundImage = `url(https://api.mapbox.com/styles/v1/pixlpainter/clda7ilh1000i01ofotpgomzu/static/${long},`
+                + `${lat},5/${width}x${height}?logo=false&access_token=${mapboxToken})`;
+            element.style.backgroundSize = `${width}px ${height}px`;
+        }
+
+        const newestStickerResponse = fetchStickers({ ...stickerQuery, limit: 1 }).catch(error => {
             showLoadError(error);
             return { stickers: [], total: 0 };
-        }).then(({ stickers: newestStickers, total }) => {
+        });
+        newestStickerResponse.then(({ stickers }) => showStaticMap(getMapCenter(stickers[0])));
+
+        // The deferred Mapbox scripts have run by the time the DOM is ready.
+        const mapboxLoaded = new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+
+        Promise.all([newestStickerResponse, mapboxLoaded]).then(([{ stickers: newestStickers, total }]) => {
             const newest_sticker = newestStickers[0];
-            let long;
-            let lat;
-            // Check if there are any stickers available
-            if (newest_sticker) {
-                long = newest_sticker.geometry.coordinates[0];
-                lat = newest_sticker.geometry.coordinates[1];
-            } else {
-                // Default coordinates if no stickers are available
-                long = 10.4541194;
-                lat = 51.1642292;
-            }
+            mapboxgl.accessToken = mapboxToken;
 
             const map = new mapboxgl.Map({
                 container: 'map', // container ID
                 style: 'mapbox://styles/pixlpainter/clda7ilh1000i01ofotpgomzu', // style URL
-                center: [long, lat], // starting position [lng, lat]
+                center: getMapCenter(newest_sticker), // starting position [lng, lat]
                 zoom: 5, // starting zoom
-                attributionControl: false
+                attributionControl: false,
+                fadeDuration: 0 // show markers at once
             });
             // Add search control to the map.
             map.addControl(
@@ -138,7 +160,16 @@
             }));
             // Add zoom and rotation controls to the map.
             map.addControl(new mapboxgl.NavigationControl());
-            map.on('load', () => {
+            // Not `load`, which also waits for the map tiles
+            map.on('style.load', () => {
+                // Until the tiles are there, the static map shows through the map's background
+                const backgroundLayers = map.getStyle().layers.filter(layer => layer.type === 'background');
+                backgroundLayers.forEach(layer => map.setLayoutProperty(layer.id, 'visibility', 'none'));
+                map.once('load', () => {
+                    backgroundLayers.forEach(layer => map.setLayoutProperty(layer.id, 'visibility', 'visible'));
+                    document.getElementById('static').remove();
+                });
+
                 // Add source for marker geo data
                 map.addSource('stickers', { type: 'geojson', data: { type: "FeatureCollection", features: newestStickers } });
                 // Add a symbol layer for HBG markers
