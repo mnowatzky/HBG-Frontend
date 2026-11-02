@@ -115,7 +115,8 @@
                 style: 'mapbox://styles/pixlpainter/clda7ilh1000i01ofotpgomzu', // style URL
                 center: [long, lat], // starting position [lng, lat]
                 zoom: 5, // starting zoom
-                attributionControl: false
+                attributionControl: false,
+                fadeDuration: 0 // show markers at once
             });
             // Add search control to the map.
             map.addControl(
@@ -138,7 +139,8 @@
             }));
             // Add zoom and rotation controls to the map.
             map.addControl(new mapboxgl.NavigationControl());
-            map.on('load', () => {
+            // Not `load`, which also waits for the map tiles
+            map.on('style.load', () => {
                 // Add source for marker geo data
                 map.addSource('stickers', { type: 'geojson', data: { type: "FeatureCollection", features: newestStickers } });
                 // Add a symbol layer for HBG markers
