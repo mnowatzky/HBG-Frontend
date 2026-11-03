@@ -37,27 +37,8 @@
     <script>
     const data = get("data");
 
-    let categoryCounts = new Map();
-
-    function populateCounts(item, idx, arr) {
-        if (data === "names") {
-            const sticker_names = item.name.split("&");
-            sticker_names.forEach(name => {
-                let trimmed_name = name.trim();
-                if (categoryCounts.has(trimmed_name)) {
-                    categoryCounts.set(trimmed_name, categoryCounts.get(trimmed_name) + 1);
-                } else {
-                    categoryCounts.set(trimmed_name, 1);
-                }
-            });
-        } else if (data === "countries") {
-            if (categoryCounts.has(item.country)) {
-                categoryCounts.set(item.country, categoryCounts.get(item.country) + 1);
-            } else {
-                categoryCounts.set(item.country, 1);
-            }
-        }
-    }
+    // Most first, as /stats/counts of the API returns them
+    let categoryCounts = [];
 
     let title;
     if (data === "names") {
@@ -67,12 +48,10 @@
     }
 
     function initialiseChart() {
-        const sortedCounts = new Map([...categoryCounts].sort((a, b) => b[1] - a[1]));
-
-        const xValues = Array.from(sortedCounts.keys());
+        const xValues = categoryCounts.map(count => count.label);
         const datasets = [{
             backgroundColor: "#55b6ff",
-            data: Array.from(sortedCounts.values()),
+            data: categoryCounts.map(count => count.count),
             label: "Geklebte Sticker"
         }]
 
@@ -114,16 +93,14 @@
 
     window.onload = async function() {
         try {
-            for await (const page of fetchAllStickers({format: "json"})) {
-                page.forEach(populateCounts);
-            }
+            categoryCounts = await fetchStats('/counts', {by: data === "names" ? "person" : "country"});
         } catch (error) {
             console.error(error);
             document.getElementById("load_error").style.display = "block";
             return;
         }
 
-        document.getElementById('stickerCount').style.height = categoryCounts.size * 20 + 'px';
+        document.getElementById('stickerCount').style.height = categoryCounts.length * 20 + 'px';
         initialiseChart();
     }
 </script>

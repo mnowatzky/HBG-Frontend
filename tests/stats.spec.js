@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { STICKERS_URL, sticker, mockStickers } = require('./mock-api');
+const { STATS_URL, sticker, mockStickers } = require('./mock-api');
 
 const now = new Date();
 const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1, 12);
@@ -53,7 +53,7 @@ test('shows this month and the change from last month', async ({ page }) => {
 
 test.describe('when the API is down', () => {
     test.beforeEach(async ({ page }) => {
-        await page.route(STICKERS_URL, route => route.fulfill({ status: 502 }));
+        await page.route(STATS_URL, route => route.fulfill({ status: 502 }));
         await page.goto('/stats');
     });
 

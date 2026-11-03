@@ -5,11 +5,6 @@ const HAMBURG = { latitude: 53.5511, longitude: 9.9937 };
 
 test.use({ geolocation: HAMBURG, permissions: ['geolocation'] });
 
-// Answers like Nominatim.
-async function mockNominatim(page, address) {
-    await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({ json: { address } }));
-}
-
 // Records the stickers the page sends and answers with the given status.
 async function mockSave(page, status = 201) {
     const saved = [];
@@ -27,42 +22,22 @@ async function saveSticker(page, name) {
     await page.getByRole('button', { name: 'Sticker speichern' }).click();
 }
 
-test('saves the name, position and address', async ({ page }) => {
-    await mockNominatim(page, { city: 'Hamburg', state: 'Hamburg', country: 'Deutschland' });
+test('saves the name and the position, and leaves the address to the API', async ({ page }) => {
     const saved = await mockSave(page);
 
     await saveSticker(page, 'Timo & Lena');
 
     await expect(page.getByText('Sticker gespeichert!')).toBeVisible();
-    expect(saved).toEqual([{
-        ...HAMBURG, name: 'Timo & Lena', city: 'Hamburg', state: 'Hamburg', country: 'Deutschland'
-    }]);
+    expect(saved).toEqual([{ ...HAMBURG, name: 'Timo & Lena' }]);
 });
 
-test('takes the town when there is no city, and the county when there is no state', async ({ page }) => {
-    await mockNominatim(page, { town: 'Wedel', county: 'Kreis Pinneberg', country: 'Deutschland' });
-    const saved = await mockSave(page);
+test('says so when the API cannot save the sticker', async ({ page }) => {
+    await mockSave(page, 500);
 
     await saveSticker(page, 'Timo');
 
-    await expect(page.getByText('Sticker gespeichert!')).toBeVisible();
-    expect(saved[0]).toMatchObject({ city: 'Wedel', state: 'Kreis Pinneberg', country: 'Deutschland' });
+    await expect(page.getByText('Sticker konnte nicht gespeichert werden!')).toBeVisible();
 });
-
-for (const [failure, answer] of [
-    ['is unreachable', route => route.abort('connectionrefused')],
-    ['answers with an error page', route => route.fulfill({ status: 503, contentType: 'text/html', body: '<h1>503</h1>' })],
-]) {
-    test(`saves without an address when Nominatim ${failure}`, async ({ page }) => {
-        await page.route('https://nominatim.openstreetmap.org/**', answer);
-        const saved = await mockSave(page);
-
-        await saveSticker(page, 'Timo');
-
-        await expect(page.getByText('Sticker gespeichert!')).toBeVisible();
-        expect(saved).toEqual([{ ...HAMBURG, name: 'Timo' }]);
-    });
-}
 
 test('asks for a name first', async ({ page }) => {
     const saved = await mockSave(page);
@@ -74,7 +49,6 @@ test('asks for a name first', async ({ page }) => {
 });
 
 test('says so when the API limits the rate', async ({ page }) => {
-    await mockNominatim(page, { city: 'Hamburg', state: 'Hamburg', country: 'Deutschland' });
     await mockSave(page, 429);
 
     await saveSticker(page, 'Timo');

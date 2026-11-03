@@ -3,12 +3,17 @@
 // put its URL here and add this site to STICKER_CORS_ORIGINS in the API's .env.
 const API_BASE_URL = '/api';
 
-async function fetchStickers(params) {
-    const response = await fetch(`${API_BASE_URL}/stickers?${new URLSearchParams(params)}`);
+async function fetchApi(path, params) {
+    const response = await fetch(`${API_BASE_URL}${path}?${new URLSearchParams(params)}`);
 
     if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
     }
+    return response;
+}
+
+async function fetchStickers(params) {
+    const response = await fetchApi('/stickers', params);
 
     const body = await response.json();
     return {
@@ -17,8 +22,8 @@ async function fetchStickers(params) {
     };
 }
 
-// Yields all stickers page by page, newest first.
-async function* fetchAllStickers(params, limit = 500) {
+// Yields all stickers page by page, newest first. Up to 5000 come in one request.
+async function* fetchAllStickers(params, limit = 5000) {
     const seen = new Set();
     let offset = 0;
 
@@ -37,6 +42,12 @@ async function* fetchAllStickers(params, limit = 500) {
 
         offset += stickers.length;
     }
+}
+
+// The statistics, computed by the API: /summary, /counts or /farthest.
+// Takes the filters of /stickers, like since and until as ISO times.
+async function fetchStats(path, params = {}) {
+    return (await fetchApi(`/stats${path}`, params)).json();
 }
 
 // Names are free text from anyone, so they must not be inserted into HTML as they are.

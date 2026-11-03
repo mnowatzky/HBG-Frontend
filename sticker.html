@@ -99,83 +99,18 @@
             }
         }
 
-        const reverseGeocode = async (lat, long) => {
-            const stadtstaaten = ['Hamburg', 'Bremen', 'Berlin'];
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&email=malte.now@gmx.de&zoom=10&lat=${lat}&lon=${long}`;
-            const response = await fetch(url, {signal: AbortSignal.timeout(5000)});
-            if (!response.ok) {
-                throw new Error(`Nominatim HTTP error: ${response.status}`);
-            }
-            const myJson = await response.json(); //extract JSON from the http response
-            //nominatim has no address for places like the open sea
-            myJson.address ??= {};
-            let city = myJson.address.city;
-            if (city === undefined) {
-                if (myJson.address.town === undefined) {
-                    if (myJson.address.village === undefined) {
-                        if (myJson.address.municipality === undefined) {
-                            if (myJson.address.region === undefined) {
-                                if (myJson.address.county === undefined) {
-                                    city = myJson.address.state;
-                                } else {
-                                    city = myJson.address.county;
-                                }
-                            } else {
-                                city = myJson.address.region;
-                            }
-                        } else {
-                            city = myJson.address.municipality;
-                        }
-                    } else {
-                        city = myJson.address.village;
-                    }
-                } else {
-                    city = myJson.address.town;
-                }
-            } else {
-                city = myJson.address.city;
-            }
-            let state = myJson.address.state;
-            if (state === undefined) {
-                if (myJson.address.state_district === undefined) {
-                    state = myJson.address.county;
-                } else {
-                    state = myJson.address.state_district;
-                }
-            }
-            if (stadtstaaten.includes(city)) {
-                state = city;
-            }
-
-            return {city: city, state: state, country: myJson.address.country};
-        }
-
         function savePosition(position) {
-            //save lat, long and name into variables
-            const lat = position.coords.latitude;
-            const long = position.coords.longitude;
-            const name = document.getElementById('name').value;
-            //asynchronously get city, state and country from coords and save into database
-            reverseGeocode(lat, long).catch(function (error) {
-                // Save the sticker without an address rather than not at all
-                console.error(error);
-                return {};
-            }).then(function (address) {
-                //insert variables into database
-                return fetch(`${API_BASE_URL}/stickers`, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        latitude: lat,
-                        longitude: long,
-                        name: name,
-                        city: address.city,
-                        state: address.state,
-                        country: address.country
-                    }),
-                    headers: {
-                        "Content-type": "application/json; charset=UTF-8"
-                    }
-                });
+            // The API adds the address and the time
+            fetch(`${API_BASE_URL}/stickers`, {
+                method: "POST",
+                body: JSON.stringify({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    name: document.getElementById('name').value
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
             }).then(function (response) {
                 hideLoading();
                 if (response.ok) {

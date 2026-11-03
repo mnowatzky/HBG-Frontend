@@ -27,48 +27,22 @@
 
     <script src="js/api.js"></script>
     <script type="text/javascript">
-        const stickerCount = {total: 0, currMonth: 0, lastMonth: 0};
-        const cities = {total: new Set(), currMonth: new Set(), lastMonth: new Set()};
-        const countries = {total: new Set(), currMonth: new Set(), lastMonth: new Set()};
-        const names = {total: new Set(), currMonth: new Set(), lastMonth: new Set()};
+        // /stats/summary of the API for all time, this month and last month
+        const summaries = {total: null, currMonth: null, lastMonth: null};
 
         const d = new Date();
-        const thisMonth = d.getMonth() + 1;
-        const thisYear = d.getFullYear();
 
-        function getCounts(item, idx, arr) {
-            stickerCount.total++;
-            const date = new Date(item.date);
-            const month = date.getMonth() + 1;
-            const year = date.getFullYear();
+        // The start of a month in the visitor's time zone, offset months from this one
+        function monthStart(offset) {
+            return new Date(d.getFullYear(), d.getMonth() + offset, 1).toISOString();
+        }
 
-            cities.total.add(item.city);
-            countries.total.add(item.country);
-            const sticker_names = item.name.split("&");
-            sticker_names.forEach(name => names.total.add(name.trim()));
-
-            if (month === thisMonth && year === thisYear) {
-                stickerCount.currMonth++;
-                cities.currMonth.add(item.city);
-                countries.currMonth.add(item.country);
-                const sticker_names = item.name.split("&");
-                sticker_names.forEach(name => names.currMonth.add(name.trim()));
-            }
-
-            let lastMonth = thisMonth - 1;
-            let lastYear = thisYear;
-            if (lastMonth === 0) {
-                lastMonth = 12;
-                lastYear--;
-            }
-
-            if (month === lastMonth && year === lastYear) {
-                stickerCount.lastMonth++;
-                cities.lastMonth.add(item.city);
-                countries.lastMonth.add(item.country);
-                const sticker_names = item.name.split("&");
-                sticker_names.forEach(name => names.lastMonth.add(name.trim()));
-            }
+        function showSummary(summary) {
+            const counts = [summary.stickers, summary.cities, summary.countries, summary.people];
+            ["stickercount", "citycount", "countrycount", "namecount"].forEach((id, idx) => {
+                document.getElementById(id).innerText = counts[idx].toString();
+                pluralizeDesc(idx, counts[idx]);
+            });
         }
 
         function setDiff (textID, arrowID, diff) {
@@ -107,23 +81,13 @@
         }
 
         function switchStats() {
+            if (!summaries.total) return; // not loaded yet
             const monthly = document.getElementById("timeswitcher").checked;
 
             if (monthly) {
                 //change all texts with class time_frame to "im {current month}"
                 document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "im " + d.toLocaleString('de', { month: 'long' }));
-
-                //show monthly counts
-                document.getElementById("stickercount").innerText = stickerCount.currMonth;
-                document.getElementById("citycount").innerText = cities.currMonth.size.toString();
-                document.getElementById("countrycount").innerText = countries.currMonth.size.toString();
-                document.getElementById("namecount").innerText = names.currMonth.size.toString();
-
-                //pluralize the descriptions
-                pluralizeDesc(0, stickerCount.currMonth);
-                pluralizeDesc(1, cities.currMonth.size);
-                pluralizeDesc(2, countries.currMonth.size);
-                pluralizeDesc(3, names.currMonth.size);
+                showSummary(summaries.currMonth);
 
                 //show difference to last month
                 document.querySelectorAll(".diff").forEach(diff => diff.style.visibility = "visible");
@@ -131,18 +95,7 @@
             } else {
                 //change all texts with class time_frame to "Insgesamt"
                 document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "Insgesamt");
-
-                //show total counts
-                document.getElementById("stickercount").innerText = stickerCount.total;
-                document.getElementById("citycount").innerText = cities.total.size.toString();
-                document.getElementById("countrycount").innerText = countries.total.size.toString();
-                document.getElementById("namecount").innerText = names.total.size.toString();
-
-                //pluralize the descriptions
-                pluralizeDesc(0, stickerCount.total);
-                pluralizeDesc(1, cities.total.size);
-                pluralizeDesc(2, countries.total.size);
-                pluralizeDesc(3, names.total.size);
+                showSummary(summaries.total);
 
                 //hide difference to last month
                 document.querySelectorAll(".diff").forEach(diff => diff.style.visibility = "hidden");
@@ -152,24 +105,24 @@
 
         window.onload = async function () {
             try {
-                for await (const page of fetchAllStickers({format: "json"})) {
-                    page.forEach(getCounts);
-                }
+                [summaries.total, summaries.currMonth, summaries.lastMonth] = await Promise.all([
+                    fetchStats('/summary'),
+                    fetchStats('/summary', {since: monthStart(0)}),
+                    fetchStats('/summary', {since: monthStart(-1), until: monthStart(0)}),
+                ]);
             } catch (error) {
                 console.error(error);
                 document.getElementById("load_error").style.display = "block";
                 return;
             }
 
-            document.getElementById("stickercount").innerText = stickerCount.total;
-            document.getElementById("citycount").innerText = cities.total.size.toString();
-            document.getElementById("countrycount").innerText = countries.total.size.toString();
-            document.getElementById("namecount").innerText = names.total.size.toString();
+            showSummary(summaries.total);
 
-            setDiff("total_diff","total_arrow",stickerCount.currMonth - stickerCount.lastMonth);
-            setDiff("city_diff","city_arrow",cities.currMonth.size - cities.lastMonth.size);
-            setDiff("country_diff","country_arrow",countries.currMonth.size - countries.lastMonth.size);
-            setDiff("name_diff","name_arrow",names.currMonth.size - names.lastMonth.size);
+            const change = key => summaries.currMonth[key] - summaries.lastMonth[key];
+            setDiff("total_diff", "total_arrow", change("stickers"));
+            setDiff("city_diff", "city_arrow", change("cities"));
+            setDiff("country_diff", "country_arrow", change("countries"));
+            setDiff("name_diff", "name_arrow", change("people"));
         }
     </script>
 </head>

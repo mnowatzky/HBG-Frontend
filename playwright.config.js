@@ -1,4 +1,4 @@
-// The tests run against the built image (see README), with the API and Nominatim mocked.
+// The tests run against the built image (see README), with the API mocked.
 const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({

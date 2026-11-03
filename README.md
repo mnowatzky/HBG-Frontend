@@ -36,7 +36,7 @@ A page that loads something from another site needs it added to the Content-Secu
 
 ### Tests
 
-The tests use [Playwright](https://playwright.dev) against the running image, with the API and Nominatim mocked, so they need no stack. They also check accessibility with axe. The pages are checked with [html-validate](https://html-validate.org). CI runs all of this on each push. You need Node.js (the version in `.nvmrc`):
+The tests use [Playwright](https://playwright.dev) against the running image, with the API mocked, so they need no stack. They also check accessibility with axe. The pages are checked with [html-validate](https://html-validate.org). CI runs all of this on each push. You need Node.js (the version in `.nvmrc`):
 
 ```sh
 npm ci
