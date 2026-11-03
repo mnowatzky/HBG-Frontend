@@ -1,0 +1,9 @@
+# The Dockerfile copies only what the site needs; this keeps the rest out of the build context.
+*
+!deploy/apache.conf
+!*.html
+!robots.txt
+!css/
+!js/
+!bilder/
+**/.DS_Store

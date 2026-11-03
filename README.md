@@ -11,12 +11,13 @@ The pages of the HBG sticker map, in German: plain HTML, CSS and JavaScript with
 | `/sticker` | Saves a sticker at the browser's current location. |
 | `/stats` | Totals and the change from last month: stickers, cities, countries and people. |
 | `/bar_chart?data=names` or `?data=countries` | Stickers per person or per country. |
+| `/datenschutz` | The privacy policy. |
 
-`/` is still the web host's placeholder page (`index.html`).
+`/` redirects to `/karte`.
 
 ## Running it
 
-Run the image `maltenow/hbg-frontend` as part of the stack: the [compose file and the steps](https://github.com/mnowatzky/HBG-Fast-API#running-it) are in HBG-Fast-API. Apache's settings are in [`deploy/apache.conf`](deploy/apache.conf). It forwards `/api/` to the `sticker-api` service and serves `/karte` from `karte.html`.
+Run the image `maltenow/hbg-frontend` as part of the stack: the [compose file and the steps](https://github.com/mnowatzky/HBG-Fast-API#running-it) are in HBG-Fast-API. Apache's settings are in [`deploy/apache.conf`](deploy/apache.conf). It forwards `/api/` to the `sticker-api` service, serves `/karte` from `karte.html`, compresses responses and sets the security headers. The Content-Security-Policy is report-only, so violations show in the browser console without blocking anything. HSTS is left to the reverse proxy that terminates TLS.
 
 ## Development
 
@@ -31,15 +32,32 @@ The pages show an error message while the API can't be reached. The location fea
 
 The API's address is `API_BASE_URL` in [`js/api.js`](js/api.js), and all pages use the helpers in that file. Names are free text from anyone, so pass them through `escapeHtml` before inserting them into HTML.
 
+A page that loads something from another site needs it added to the Content-Security-Policy in [`deploy/apache.conf`](deploy/apache.conf).
+
+### Tests
+
+The tests use [Playwright](https://playwright.dev) against the running image, with the API mocked, so they need no stack. They also check accessibility with axe. The pages are checked with [html-validate](https://html-validate.org). CI runs all of this on each push. You need Node.js (the version in `.nvmrc`):
+
+```sh
+npm ci
+npx playwright install chromium
+npm run lint
+docker build -t hbg-frontend:dev . && docker run --rm -d -p 127.0.0.1:8080:80 hbg-frontend:dev
+npm test
+```
+
+`BASE_URL` points the tests at another address, e.g. `BASE_URL=http://127.0.0.1:8089 npm test`.
+
 ## Outside services
 
 | Service | Used for |
 | --- | --- |
-| [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) and its geocoder | The map and its search on `/karte`. The token in `karte.html` is a public one (`pk.`), which every browser sees. |
-| [Nominatim](https://nominatim.org/) | Finds the city, state and country on `/sticker`. The browser sends it the coordinates directly. |
+| [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) and its geocoder | The map and its search on `/karte`. The token in `karte.html` is a public one (`pk.`), which every browser sees. When changing the version, update the `integrity` hashes next to it. |
 | [Chart.js](https://www.chartjs.org/) from jsDelivr | The charts on `/bar_chart`. |
-| jQuery from Google, Google Fonts | `/sticker` and `/stats`. |
 | [SweetAlert2](https://sweetalert2.github.io/) | Dialogs on `/sticker`. Included in `js/` under the MIT License. |
+| [Oswald](https://github.com/googlefonts/OswaldFont) | The font of all pages. Included in `css/fonts/` under the SIL Open Font License. |
+
+When this list changes, update `/datenschutz` too.
 
 ## Releasing
 

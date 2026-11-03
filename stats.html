@@ -5,7 +5,7 @@
     <title>HBG Statistiken</title>
 
     <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="msapplication-TileImage" content="/bilder/favicon/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -23,57 +23,26 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/bilder/favicon/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/bilder/favicon/favicon-16x16.png">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
-
-
     <link rel="stylesheet" href="css/main.css">
 
     <script src="js/api.js"></script>
     <script type="text/javascript">
-        const stickerCount = {total: 0, currMonth: 0, lastMonth: 0};
-        const cities = {total: new Set(), currMonth: new Set(), lastMonth: new Set()};
-        const countries = {total: new Set(), currMonth: new Set(), lastMonth: new Set()};
-        const names = {total: new Set(), currMonth: new Set(), lastMonth: new Set()};
+        // /stats/summary of the API for all time, this month and last month
+        const summaries = {total: null, currMonth: null, lastMonth: null};
 
         const d = new Date();
-        const thisMonth = d.getMonth() + 1;
-        const thisYear = d.getFullYear();
 
-        function getCounts(item, idx, arr) {
-            stickerCount.total++;
-            const date = new Date(item.date);
-            const month = date.getMonth() + 1;
-            const year = date.getFullYear();
+        // The start of a month in the visitor's time zone, offset months from this one
+        function monthStart(offset) {
+            return new Date(d.getFullYear(), d.getMonth() + offset, 1).toISOString();
+        }
 
-            cities.total.add(item.city);
-            countries.total.add(item.country);
-            const sticker_names = item.name.split("&");
-            sticker_names.forEach(name => names.total.add(name.trim()));
-
-            if (month === thisMonth && year === thisYear) {
-                stickerCount.currMonth++;
-                cities.currMonth.add(item.city);
-                countries.currMonth.add(item.country);
-                const sticker_names = item.name.split("&");
-                sticker_names.forEach(name => names.currMonth.add(name.trim()));
-            }
-
-            let lastMonth = thisMonth - 1;
-            let lastYear = thisYear;
-            if (lastMonth === 0) {
-                lastMonth = 12;
-                lastYear--;
-            }
-
-            if (month === lastMonth && year === lastYear) {
-                stickerCount.lastMonth++;
-                cities.lastMonth.add(item.city);
-                countries.lastMonth.add(item.country);
-                const sticker_names = item.name.split("&");
-                sticker_names.forEach(name => names.lastMonth.add(name.trim()));
-            }
+        function showSummary(summary) {
+            const counts = [summary.stickers, summary.cities, summary.countries, summary.people];
+            ["stickercount", "citycount", "countrycount", "namecount"].forEach((id, idx) => {
+                document.getElementById(id).innerText = counts[idx].toString();
+                pluralizeDesc(idx, counts[idx]);
+            });
         }
 
         function setDiff (textID, arrowID, diff) {
@@ -91,7 +60,7 @@
                 document.getElementById(textID).style.color = 'red';
             } else if (diff > 0) {
                 document.getElementById(arrowID).src = arrow_up;
-                document.getElementById(textID).style.color = 'lime';
+                document.getElementById(textID).style.color = 'var(--increase-color)';
             } else {
                 document.getElementById(arrowID).src = arrow_neutral;
                 document.getElementById(textID).style.color = 'gray';
@@ -112,23 +81,13 @@
         }
 
         function switchStats() {
+            if (!summaries.total) return; // not loaded yet
             const monthly = document.getElementById("timeswitcher").checked;
 
             if (monthly) {
                 //change all texts with class time_frame to "im {current month}"
-                document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "im " + d.toLocaleString('default', { month: 'long' }));
-
-                //show monthly counts
-                document.getElementById("stickercount").innerText = stickerCount.currMonth;
-                document.getElementById("citycount").innerText = cities.currMonth.size.toString();
-                document.getElementById("countrycount").innerText = countries.currMonth.size.toString();
-                document.getElementById("namecount").innerText = names.currMonth.size.toString();
-
-                //pluralize the descriptions
-                pluralizeDesc(0, stickerCount.currMonth);
-                pluralizeDesc(1, cities.currMonth.size);
-                pluralizeDesc(2, countries.currMonth.size);
-                pluralizeDesc(3, names.currMonth.size);
+                document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "im " + d.toLocaleString('de', { month: 'long' }));
+                showSummary(summaries.currMonth);
 
                 //show difference to last month
                 document.querySelectorAll(".diff").forEach(diff => diff.style.visibility = "visible");
@@ -136,18 +95,7 @@
             } else {
                 //change all texts with class time_frame to "Insgesamt"
                 document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "Insgesamt");
-
-                //show total counts
-                document.getElementById("stickercount").innerText = stickerCount.total;
-                document.getElementById("citycount").innerText = cities.total.size.toString();
-                document.getElementById("countrycount").innerText = countries.total.size.toString();
-                document.getElementById("namecount").innerText = names.total.size.toString();
-
-                //pluralize the descriptions
-                pluralizeDesc(0, stickerCount.total);
-                pluralizeDesc(1, cities.total.size);
-                pluralizeDesc(2, countries.total.size);
-                pluralizeDesc(3, names.total.size);
+                showSummary(summaries.total);
 
                 //hide difference to last month
                 document.querySelectorAll(".diff").forEach(diff => diff.style.visibility = "hidden");
@@ -157,58 +105,59 @@
 
         window.onload = async function () {
             try {
-                for await (const page of fetchAllStickers({format: "json"})) {
-                    page.forEach(getCounts);
-                }
+                [summaries.total, summaries.currMonth, summaries.lastMonth] = await Promise.all([
+                    fetchStats('/summary'),
+                    fetchStats('/summary', {since: monthStart(0)}),
+                    fetchStats('/summary', {since: monthStart(-1), until: monthStart(0)}),
+                ]);
             } catch (error) {
                 console.error(error);
                 document.getElementById("load_error").style.display = "block";
                 return;
             }
 
-            document.getElementById("stickercount").innerText = stickerCount.total;
-            document.getElementById("citycount").innerText = cities.total.size.toString();
-            document.getElementById("countrycount").innerText = countries.total.size.toString();
-            document.getElementById("namecount").innerText = names.total.size.toString();
+            showSummary(summaries.total);
 
-            setDiff("total_diff","total_arrow",stickerCount.currMonth - stickerCount.lastMonth);
-            setDiff("city_diff","city_arrow",cities.currMonth.size - cities.lastMonth.size);
-            setDiff("country_diff","country_arrow",countries.currMonth.size - countries.lastMonth.size);
-            setDiff("name_diff","name_arrow",names.currMonth.size - names.lastMonth.size);
+            const change = key => summaries.currMonth[key] - summaries.lastMonth[key];
+            setDiff("total_diff", "total_arrow", change("stickers"));
+            setDiff("city_diff", "city_arrow", change("cities"));
+            setDiff("country_diff", "country_arrow", change("countries"));
+            setDiff("name_diff", "name_arrow", change("people"));
         }
     </script>
 </head>
 <body>
 
-<img src="bilder/Sticker_header.svg" class="logo" alt="HBG Logo"><br>
+<h1 class="logo_heading"><img src="bilder/Sticker_header.svg" class="logo" alt="HBG Sticker"></h1><br>
 <div id="divider"></div>
 
-<p id="load_error" style="display: none; text-align: center; color: red">Sticker konnten nicht geladen werden</p>
+<main>
+<p id="load_error" role="alert" style="display: none; text-align: center; color: red">Sticker konnten nicht geladen werden</p>
 
 <div class="timechooser">
     <p class="timechoose_desc">Insgesamt</p>
     <label class="switch">
-      <input type="checkbox" id="timeswitcher" onclick="switchStats()">
+      <input type="checkbox" id="timeswitcher" role="switch" aria-labelledby="thismonth" onclick="switchStats()">
       <span class="slider"></span>
     </label>
     <p class="timechoose_desc" id="thismonth">Dieser Monat</p>
 </div>
 
 <div id="cards">
-    <a class="card">
+    <div class="card">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="stickercount" class="stat_int"></p>
         <p id="total_diff" class="diff"></p>
         <img src="data:," alt class="change_arrow" id="total_arrow" style="visibility: hidden;">
         <p class="stat_desc" id="sticker_desc">geklebte Sticker</p>
-    </a>
-    <a class="card">
+    </div>
+    <div class="card">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="citycount" class="stat_int"></p>
         <p id="city_diff" class="diff"></p>
         <img src="data:," alt class="change_arrow" id="city_arrow" style="visibility: hidden;">
         <p class="stat_desc" id="city_desc">beklebte Städte</p>
-    </a>
+    </div>
     <a class="card" href="/bar_chart?data=countries">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="countrycount" class="stat_int"></p>
@@ -224,6 +173,9 @@
         <p class="stat_desc" id="name_desc">Stickerverteiler</p>
     </a>
 </div>
+</main>
+
+<p style="margin: 20px"><a href="/datenschutz" class="footer_link">Datenschutz</a></p>
 
 </body>
 </html>

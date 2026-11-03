@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 
 <head>
     <meta charset="utf-8">
@@ -20,12 +20,14 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/bilder/favicon/favicon-16x16.png">
 
     <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="msapplication-TileImage" content="/bilder/favicon/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 
-    <script src='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js'
+        integrity="sha384-Dh69hHahATL39qHpviUrQ9z0pmsCrxb26f2hgj+FzUGoV6YYILHzEEkRWqXBc0yM" crossorigin="anonymous"></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css' rel='stylesheet'
+        integrity="sha384-EP/H7vnAWQ5LW9GnEKFrWdLNFs5Ar50IJgtlPCBzA/mZRKZrR+/rMG5kXl5QNyCp" crossorigin="anonymous" />
     <script src="js/api.js"></script>
 
     <style>
@@ -54,30 +56,21 @@
             color: #c00000;
             font-family: sans-serif;
         }
-
-        .marker {
-            display: block;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            background-image: url("/bilder/hbg-marker.svg");
-            background-size: cover;
-            width: 30px;
-            height: 30px;
-        }
     </style>
 </head>
 
 <body>
     <!-- Load the `mapbox-gl-geocoder` plugin. -->
     <script
-        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.min.js"></script>
+        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.min.js"
+        integrity="sha384-HChgInavGtMOwmOV2SoEnGlo/0cSXuAKsKSy/cOYC4xz2v5LLgoNiylsC8yiCHO0" crossorigin="anonymous"></script>
     <link rel="stylesheet"
         href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.css"
+        integrity="sha384-1KNhwJNCQTr0DCi/5/OnQcFytgycxTahxNZaqKbAtqmY8bUhu26qxXqvDGXXwplS" crossorigin="anonymous"
         type="text/css">
 
     <div id='map'></div>
-    <div id="load_error">Sticker konnten nicht geladen werden</div>
+    <div id="load_error" role="alert">Sticker konnten nicht geladen werden</div>
 
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoicGl4bHBhaW50ZXIiLCJhIjoiY2p1bWV5ZjVtMHZiaDRmbDg3cW1ubmx3NCJ9.X5FRsatkHE11P2Zwk8zN0w';
@@ -122,7 +115,9 @@
             map.addControl(
                 new MapboxGeocoder({
                     accessToken: mapboxgl.accessToken,
-                    mapboxgl: mapboxgl
+                    mapboxgl: mapboxgl,
+                    language: 'de',
+                    placeholder: 'Suche'
                 })
             );
             // zoom map to user location control
@@ -181,7 +176,7 @@
 
                 // show Stickercount
                 map.addControl(new mapboxgl.AttributionControl({
-                    customAttribution: `Sticker gesamt: ${total}`
+                    customAttribution: [`Sticker gesamt: ${total}`, '<a href="/datenschutz">Datenschutz</a>']
                 }));
 
                 // When a click event occurs on a feature in the stickers layer, open a popup at the
