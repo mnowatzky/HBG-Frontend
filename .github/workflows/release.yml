@@ -46,6 +46,9 @@ jobs:
             ${{ env.IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # A bill of materials and how the image was built, attached to the image
+          sbom: true
+          provenance: mode=max
 
   release:
     needs: image

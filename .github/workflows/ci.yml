@@ -5,16 +5,27 @@ on:
     branches: ["**"]
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
       - run: docker build -t hbg-frontend .
+      - run: docker run -d --name frontend -p 8080:80 hbg-frontend
       - name: Serve every page
         run: |
-          docker run -d --name frontend -p 8080:80 hbg-frontend
-          sleep 2
-          for path in / karte sticker stats 'bar_chart?data=names' js/api.js; do
-            curl --fail --silent --show-error --output /dev/null "http://localhost:8080/$path"
+          for path in karte sticker stats datenschutz 'bar_chart?data=names' js/api.js; do
+            curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 \
+              --output /dev/null "http://localhost:8080/$path"
           done
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
