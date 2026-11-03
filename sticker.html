@@ -21,12 +21,11 @@
 
 
     <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="msapplication-TileImage" content="/bilder/favicon/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="js/sweetalert2.all.min.js"></script>
     <script src="js/api.js"></script>
 
@@ -80,23 +79,33 @@
                 //get location
                 if (navigator.geolocation) {
                     showLoading();
-                    const locationOptions = {maximumAge:600000, timeout:5000, enableHighAccuracy: true};
-                    navigator.geolocation.getCurrentPosition(savePosition,errorCallback_high_accuracy,locationOptions);
+                    // A fresh position, so the sticker is where the person is now
+                    const locationOptions = {maximumAge: 0, timeout: 15000, enableHighAccuracy: true};
+                    navigator.geolocation.getCurrentPosition(savePosition, locationError, locationOptions);
                 } else {
                     showError('Standort kann nicht ermittelt werden');
                 }
             }
         }
 
-        function errorCallback_high_accuracy(error) {
+        function locationError(error) {
             hideLoading();
-            showError('Hohe Standortgenauigkeit fehlgeschlagen');
+            if (error.code === error.PERMISSION_DENIED) {
+                showError('Bitte erlaube den Zugriff auf deinen Standort');
+            } else if (error.code === error.TIMEOUT) {
+                showError('Standort konnte nicht rechtzeitig ermittelt werden, versuch es nochmal');
+            } else {
+                showError('Standort kann nicht ermittelt werden');
+            }
         }
 
         const reverseGeocode = async (lat, long) => {
             const stadtstaaten = ['Hamburg', 'Bremen', 'Berlin'];
             const url = `https://nominatim.openstreetmap.org/reverse?format=json&email=malte.now@gmx.de&zoom=10&lat=${lat}&lon=${long}`;
-            const response = await fetch(url);
+            const response = await fetch(url, {signal: AbortSignal.timeout(5000)});
+            if (!response.ok) {
+                throw new Error(`Nominatim HTTP error: ${response.status}`);
+            }
             const myJson = await response.json(); //extract JSON from the http response
             //nominatim has no address for places like the open sea
             myJson.address ??= {};
@@ -145,9 +154,13 @@
             //save lat, long and name into variables
             const lat = position.coords.latitude;
             const long = position.coords.longitude;
-            const name = $('#name').val();
+            const name = document.getElementById('name').value;
             //asynchronously get city, state and country from coords and save into database
-            reverseGeocode(lat, long).then(function (address) {
+            reverseGeocode(lat, long).catch(function (error) {
+                // Save the sticker without an address rather than not at all
+                console.error(error);
+                return {};
+            }).then(function (address) {
                 //insert variables into database
                 return fetch(`${API_BASE_URL}/stickers`, {
                     method: "POST",
@@ -167,9 +180,6 @@
                 hideLoading();
                 if (response.ok) {
                     showSuccess('Sticker gespeichert!');
-                    // setTimeout(() => {
-                    //     window.location.href = "/karte";
-                    // }, 2000);
                 } else if (response.status === 429) {
                     showError('Zu viele Sticker auf einmal, versuch es gleich nochmal!');
                 } else {
@@ -184,19 +194,21 @@
 </head>
 <body>
 
-    <div id="content">
-        <img src="bilder/Sticker_header.svg" class="logo" alt="HBG Logo"><br>
+    <main id="content">
+        <h1 class="logo_heading"><img src="bilder/Sticker_header.svg" class="logo" alt="HBG Sticker"></h1><br>
         <div id="divider"></div>
-        <input type="text" id="name" name="name" placeholder="Name (max. 75 Zeichen)" class="name"><br>
-        <label for="name" style="margin: 10px">Mehrere Namen mit "&" trennen</label>
+        <label for="name" class="visually_hidden">Name</label>
+        <input type="text" id="name" name="name" placeholder="Name (max. 75 Zeichen)" class="name" aria-describedby="name_hint"><br>
+        <span id="name_hint" style="margin: 10px">Mehrere Namen mit "&" trennen</span>
         <br>
         <span>
-            <button onclick="getLocation()" class="button" id="submit"><p>Sticker speichern</p></button>
-            <a href="/karte"><button class="button"><p class="buttontext">Karte</p></button></a>
-            <a href="/stats"><button class="button"><p class="buttontext">Statistik</p></button></a>
+            <button type="button" onclick="getLocation()" class="button" id="submit">Sticker speichern</button>
+            <a href="/karte" class="button">Karte</a>
+            <a href="/stats" class="button">Statistik</a>
         </span>
-    </div>
-    <div id="loader" style="display: none"></div>
+        <p style="margin: 10px"><a href="/datenschutz" class="footer_link">Datenschutz</a></p>
+    </main>
+    <div id="loader" style="display: none" role="status"><span class="visually_hidden">Sticker wird gespeichert</span></div>
 
 </body>
 </html>
