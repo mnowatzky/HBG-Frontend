@@ -210,6 +210,21 @@ test.describe('with a few stickers', () => {
         await expect(page.locator('.year_pick')).toBeVisible();
     });
 
+    test('labels the months without the year when a year is picked', async ({ page }) => {
+        await page.locator('#wann').scrollIntoViewIfNeeded();
+        await chip(page, 'Jahr').click();
+        const labels = page.locator('#month_chart svg text');
+        const month = /^(Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)/;
+        // The months of this year that have stickers, each without the year
+        await expect.poll(async () => {
+            const months = (await labels.allTextContents()).filter(text => month.test(text));
+            return months.length > 0 && months.every(text => !/\d/.test(text));
+        }).toBe(true);
+
+        await chip(page, 'Insgesamt').click();
+        await expect(labels.filter({ hasText: /\d{4}$/ }).first()).toBeVisible();
+    });
+
     test('lays out the charts again when the phone turns, without errors', async ({ page }) => {
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));

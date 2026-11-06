@@ -180,16 +180,20 @@ function showMonths(counts) {
     }
 
     const keys = months.map(([key]) => key);
-    // Over two years, one label a year; otherwise one a month
+    // Over two years, one label a year; otherwise one a month,
+    // without the year when the period is a single year.
     const yearly = keys.length > 24;
+    const monthOnly = state.period === 'jahr';
     const axis = categoryAxis(keys, {
         axisLabel: {
             color: MUTED,
             interval: yearly ? (index, key) => key.endsWith('-01') : 'auto',
-            formatter: key => (yearly ? key.slice(0, 4) : monthName(key, true)),
+            formatter: key => (yearly ? key.slice(0, 4) : monthOnly ? SHORT_MONTHS[Number(key.slice(5)) - 1] : monthName(key, true)),
         },
     });
-    const grid = { left: 8, right: 16, top: 16, bottom: 8 };
+    // Room below the labels for the letters that hang below the line, like p and g,
+    // which ECharts leaves out when it fits the labels into the chart
+    const grid = { left: 8, right: 16, top: 16, bottom: 8, outerBounds: { left: 0, right: 0, top: 0, bottom: 6 } };
     const busiest = months.reduce((a, b) => (b[1] > a[1] ? b : a));
 
     draw('month_chart', `Die meisten Sticker im ${monthName(busiest[0])}: ${formatNumber(busiest[1])}.`, {
