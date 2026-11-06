@@ -483,6 +483,21 @@ function watchCharts() {
     observer.observe(document.getElementById('wann'));
 }
 
+// ---- Back to the top
+
+// The button shows once the logo is out of sight, and takes the focus to the chips.
+function watchScrolling() {
+    const button = document.getElementById('to_top');
+    new IntersectionObserver(([entry]) => {
+        button.hidden = entry.isIntersecting;
+    }).observe(document.querySelector('.logo_heading'));
+    button.addEventListener('click', () => {
+        const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+        document.querySelector('input[name=period]:checked').focus({ preventScroll: true });
+    });
+}
+
 // ---- Start
 
 document.querySelectorAll('input[name=period]').forEach(input => input.addEventListener('change', () => {
@@ -502,3 +517,4 @@ document.querySelector('input[name=origin][value=home]').checked = true;
 loadPeriod();
 loadAlways();
 watchCharts();
+watchScrolling();

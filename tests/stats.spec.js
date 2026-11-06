@@ -84,6 +84,27 @@ test.describe('with a few stickers', () => {
         for (const link of await bar.getByRole('link').all()) await expect(link).toBeInViewport({ ratio: 1 });
     });
 
+    test('lays out the totals two by two on phones and in one row on wide screens', async ({ page }, testInfo) => {
+        await expect(page.locator('#stickercount')).toHaveText('6');
+
+        const tops = await page.locator('.card').evaluateAll(cards => cards.map(card => Math.round(card.getBoundingClientRect().top)));
+
+        expect(new Set(tops).size).toBe(testInfo.project.name === 'mobile' ? 2 : 1);
+    });
+
+    test('offers a way back to the top once scrolled down', async ({ page }) => {
+        const button = page.getByRole('button', { name: 'Nach oben' });
+        await expect(button).toBeHidden();
+
+        await page.locator('#rekorde').scrollIntoViewIfNeeded();
+        await expect(button).toBeVisible();
+        await button.click();
+
+        await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+        await expect(button).toBeHidden();
+        await expect(page.getByRole('radio', { name: 'Insgesamt' })).toBeFocused();
+    });
+
     test('links each name to the map of that person', async ({ page }) => {
         const timo = page.locator('#board_stickers').getByRole('link', { name: 'Timo' });
 

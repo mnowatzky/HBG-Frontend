@@ -141,52 +141,85 @@ a:active {
 }
 
 .card {
-    font-family: Oswald, sans-serif;
-    display: block;
-    margin: 20px auto;
-    width: 90%;
-    height: 9em;
-    min-height: 150px;
-    max-width: 400px;
-    max-height: 250px;
+    /* The number's size follows the card's width (cqi). */
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    /* The change from last month shows only for a month, when the number is small,
+       so it fits next to it. */
+    grid-template-areas:
+        "frame frame frame"
+        "number diff arrow"
+        "desc desc desc";
+    align-items: center;
+    column-gap: 4px;
+    min-width: 0;
+    padding: 12px 14px;
     border-radius: 10px;
-    box-shadow: 0 0 20px 8px #d0d0d0;
+    box-shadow: 0 2px 12px 2px #d6d6d6;
+    font-family: Oswald, sans-serif;
+}
+
+/* The four totals on /stats: two by two on phones, four in a row on wide screens */
+#cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    max-width: 1100px;
+    margin: 16px auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+.card .time_frame {
+    grid-area: frame;
+}
+
+.card .diff {
+    grid-area: diff;
+    align-self: end;
+    margin-bottom: 6px;
+}
+
+.card .change_arrow {
+    grid-area: arrow;
+    align-self: end;
+    margin-bottom: 8px;
+}
+
+.card .stat_int {
+    grid-area: number;
+}
+
+.card .stat_desc:last-child {
+    grid-area: desc;
 }
 
 .stat_int {
-    font-size: 72pt;
-    color: var(--number-color);
-    line-height: 100%;
-    margin-left: 20px;
-    margin-top: -5px;
-    margin-bottom: 0;
+    margin: 4px 0 0;
     padding: 0;
-    display: inline-block;
+    color: var(--number-color);
+    /* "2740" is about 1.8 times as wide as the font is tall. */
+    font-size: clamp(40px, 40cqi, 96px);
+    line-height: 1;
 }
 
 .stat_desc {
-    margin-top: 0;
-    margin-left: 20px;
-    margin-bottom: 0;
+    margin: 0;
     padding: 0;
-    padding-top: 2px;
+    overflow-wrap: anywhere;
 }
 
 .change_arrow {
-    width: 50px;
-    height: 50px;
-    float: right;
-    margin-top: 30px;
-    margin-right: 10px;
+    width: 20px;
+    height: 20px;
 }
 
 .diff {
-    float: right;
-    margin-top: 15px;
-    margin-right: 10px;
-    margin-bottom: auto;
-    font-size: 36pt;
+    margin: 0;
     color: var(--increase-color);
+    font-size: 1.3em;
+    line-height: 1;
 }
 
 #divider {
@@ -597,6 +630,30 @@ a:active {
     }
 }
 
+/* Back to the top, once the page has been scrolled down */
+.to_top {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--number-color);
+    color: #fff;
+    box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
+    cursor: pointer;
+}
+
+.to_top:focus-visible {
+    outline: 3px solid var(--link-color);
+    outline-offset: 3px;
+}
+
 /* Safari */
 @-webkit-keyframes spin {
     0% {
@@ -621,10 +678,9 @@ a:active {
 }
 
 @media only screen and (min-width: 768px) {
-    /* for desktop */
-    .card {
-        margin: 20px;
-        display: inline-block;
+    #cards {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 20px;
     }
 }
 
