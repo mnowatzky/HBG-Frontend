@@ -5,9 +5,10 @@ const { STICKERS_URL, sticker, mockStickers } = require('./mock-api');
 test('escapeHtml turns names into text', async ({ page }) => {
     await page.goto('/sticker');
 
-    const escaped = await page.evaluate(() => escapeHtml('<img src=x onerror=alert(1)> & "Timo"'));
+    const escaped = await page.evaluate(() => escapeHtml('<img src=x onerror=alert(1)> & "Timo" \'s'));
 
-    expect(escaped).toBe('&lt;img src=x onerror=alert(1)&gt; &amp; "Timo"');
+    // Quotes too, for attributes
+    expect(escaped).toBe('&lt;img src=x onerror=alert(1)&gt; &amp; &quot;Timo&quot; &#39;s');
 });
 
 test('fetchAllStickers yields each sticker once when one is saved while paging', async ({ page }) => {

@@ -13,6 +13,15 @@ test('/ leads to the map', async ({ request }) => {
     expect(new URL(response.headers().location, 'http://x').pathname).toBe('/karte');
 });
 
+for (const [data, section] of [['names', 'ranglisten'], ['countries', 'wo']]) {
+    test(`the old /bar_chart?data=${data} leads to its section of /stats`, async ({ request }) => {
+        const response = await request.get(`/bar_chart?data=${data}`, { maxRedirects: 0 });
+
+        expect(response.status()).toBe(302);
+        expect(response.headers().location).toMatch(new RegExp(`/stats#${section}$`));
+    });
+}
+
 test('the old placeholder and the server version are gone', async ({ request }) => {
     expect((await request.get('/index.html')).status()).toBe(404);
 

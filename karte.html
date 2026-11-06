@@ -77,7 +77,7 @@
         const markerHeight = 25;
         const popupOffsets = { 'bottom': [0, -markerHeight] };
 
-        // bar_chart links here with ?name= to show the stickers of one person
+        // The statistics link here with ?name= to show the stickers of one person
         const selectedName = new URLSearchParams(window.location.search).get('name');
         const stickerQuery = { format: 'geojson', ...(selectedName && { name: selectedName }) };
 

@@ -141,52 +141,96 @@ a:active {
 }
 
 .card {
-    font-family: Oswald, sans-serif;
-    display: block;
-    margin: 20px auto;
-    width: 90%;
-    height: 9em;
-    min-height: 150px;
-    max-width: 400px;
-    max-height: 250px;
+    /* The number's size follows the card's width (cqi). */
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    /* The change from last month shows only for a month, when the number is small,
+       so it fits next to it. */
+    grid-template-areas:
+        "frame frame"
+        "number diff"
+        "desc desc";
+    align-items: center;
+    column-gap: 4px;
+    min-width: 0;
+    padding: 12px 14px;
     border-radius: 10px;
-    box-shadow: 0 0 20px 8px #d0d0d0;
+    box-shadow: 0 2px 12px 2px #d6d6d6;
+    font-family: Oswald, sans-serif;
+}
+
+/* The four totals on /stats: two by two on phones, four in a row on wide screens */
+#cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    max-width: 1100px;
+    margin: 16px auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+.card .time_frame {
+    grid-area: frame;
+}
+
+.card .diff {
+    grid-area: diff;
+    align-self: end;
+    margin-bottom: 8px;
+}
+
+.card .stat_int {
+    grid-area: number;
+}
+
+.card .stat_desc:last-child {
+    grid-area: desc;
 }
 
 .stat_int {
-    font-size: 72pt;
-    color: var(--number-color);
-    line-height: 100%;
-    margin-left: 20px;
-    margin-top: -5px;
-    margin-bottom: 0;
+    margin: 4px 0 0;
     padding: 0;
-    display: inline-block;
+    color: var(--number-color);
+    /* "2740" is about 1.8 times as wide as the font is tall. */
+    font-size: clamp(40px, 40cqi, 96px);
+    line-height: 1;
 }
 
 .stat_desc {
-    margin-top: 0;
-    margin-left: 20px;
-    margin-bottom: 0;
+    margin: 0;
     padding: 0;
-    padding-top: 2px;
+    overflow-wrap: anywhere;
 }
 
-.change_arrow {
-    width: 50px;
-    height: 50px;
-    float: right;
-    margin-top: 30px;
-    margin-right: 10px;
-}
-
+/* A pill with an arrow and the change, like "↓ 30" */
 .diff {
-    float: right;
-    margin-top: 15px;
-    margin-right: 10px;
-    margin-bottom: auto;
-    font-size: 36pt;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin: 0;
+    padding: 2px 9px 2px 7px;
+    border-radius: 999px;
+    font-size: .95em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.diff_up {
+    background: #e6f4ea;
     color: var(--increase-color);
+}
+
+.diff_down {
+    background: #fce8e6;
+    color: #c5221f;
+}
+
+.diff_same {
+    background: #f1f3f4;
+    color: var(--muted-color);
 }
 
 #divider {
@@ -207,75 +251,6 @@ a:active {
     height: 100px;
     -webkit-animation: spin 2s linear infinite; /* Safari */
     animation: spin 2s linear infinite;
-}
-
-.timechooser {
-    display: inline-block;
-    left: 50%;
-    position: relative;
-    margin-top: 10px;
-    transform: translate(-50%, 0);
-}
-
-.timechoose_desc {
-    display: inline-block;
-    margin: 10px;
-}
-
-/* Rounded sliders */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-    vertical-align: middle;
-}
-  
-.switch input { 
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-  
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--main-color);
-    border-radius: 34px;
-    -webkit-transition: .4s;
-    transition: .4s;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    border-radius: 50%;
-    background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
-}
-  
-input:checked + .slider {
-    background-color: var(--main-color);
-}
-  
-input:focus-visible + .slider {
-    outline: 3px solid #174ea6;
-    outline-offset: 2px;
-}
-  
-input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
 }
 
 .footer_link:link, .footer_link:visited {
@@ -319,6 +294,437 @@ input:checked + .slider:before {
     text-decoration: underline;
 }
 
+/* Elements with a display of their own, like grid rows, stay hidden too. */
+[hidden] {
+    display: none !important;
+}
+
+/* The statistics page, /stats */
+:root {
+    --muted-color: #5f6368;
+    --line-color: #e3e5e8;
+    --link-color: #174ea6;
+}
+
+/* The Zeitraum chips and the links to the sections stay at the top. */
+.stats_bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 8px 16px;
+    margin-top: 12px;
+    background: #fff;
+    border-bottom: 1px solid var(--line-color);
+}
+
+.chips {
+    display: flex;
+    flex: none;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* The radio button stays focusable, its label is the chip. */
+.chip input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.chip span {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 1px solid #c7cbd1;
+    border-radius: 999px;
+    background: #fff;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.chip input:checked + span {
+    background: var(--number-color);
+    border-color: var(--number-color);
+    color: #fff;
+}
+
+.chip input:focus-visible + span {
+    outline: 3px solid var(--link-color);
+    outline-offset: 2px;
+}
+
+.jump {
+    display: flex;
+    flex: none;
+    gap: 16px;
+    padding-left: 12px;
+    border-left: 1px solid var(--line-color);
+}
+
+.jump a {
+    position: relative;
+    padding: 6px 0 9px;
+    color: var(--muted-color);
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* The section in view, set by stats.js */
+.jump a[aria-current] {
+    color: var(--number-color);
+}
+
+.jump a[aria-current]::after {
+    content: "";
+    position: absolute;
+    right: 15%;
+    bottom: 2px;
+    left: 15%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--number-color);
+}
+
+.stats_section {
+    max-width: 1100px;
+    margin: 32px auto;
+    padding: 0 16px;
+    /* Below the sticky bar after a jump */
+    scroll-margin-top: 64px;
+}
+
+.section_title {
+    font-size: 1.8em;
+    margin: 0 0 12px;
+}
+
+.stats_section .chips {
+    margin-bottom: 8px;
+}
+
+.boards, .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 16px;
+}
+
+.board, .tile, .chart_box {
+    margin: 0;
+    padding: 16px;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
+}
+
+.board h3, .tile h2, .tile h3, .chart_box h3 {
+    margin: 0;
+    font-size: 1.3em;
+}
+
+.board_desc {
+    margin: 2px 0 10px;
+    color: var(--muted-color);
+    font-size: .9em;
+}
+
+[aria-busy="true"] .boards, [aria-busy="true"] .tiles, #cards[aria-busy="true"] {
+    opacity: .5;
+    transition: opacity .2s;
+}
+
+.ranking {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rank_row {
+    display: grid;
+    grid-template-columns: 2.2em 1fr auto;
+    column-gap: 8px;
+    align-items: baseline;
+    padding: 6px 0;
+}
+
+.rank {
+    text-align: center;
+    color: var(--muted-color);
+}
+
+.rank_name {
+    overflow-wrap: anywhere;
+}
+
+.rank_detail {
+    display: block;
+    color: var(--muted-color);
+    font-size: .85em;
+}
+
+.rank_value {
+    color: var(--number-color);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.rank_bar {
+    grid-column: 2 / 4;
+    width: calc(var(--share) * 100%);
+    min-width: 3px;
+    height: 6px;
+    margin-top: 4px;
+    border-radius: 3px;
+    background: var(--main-color);
+}
+
+.empty {
+    color: var(--muted-color);
+    padding: 6px 0;
+}
+
+.search input {
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    border: 1px solid #c7cbd1;
+    border-radius: 8px;
+    font: inherit;
+}
+
+.show_all, .chart_table summary {
+    padding: 8px 0;
+    border: 0;
+    background: none;
+    color: var(--link-color);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.tile_text {
+    margin: 8px 0 0;
+    font-size: 1.1em;
+    line-height: 1.5;
+}
+
+.tile_text strong {
+    color: var(--number-color);
+    font-size: 1.5em;
+    font-weight: 500;
+}
+
+.tile_text a, .compass a {
+    color: var(--link-color);
+    text-decoration: underline;
+}
+
+.meter {
+    display: block;
+    height: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: var(--line-color);
+}
+
+.meter span {
+    display: block;
+    width: calc(var(--share) * 100%);
+    height: 100%;
+    background: var(--number-color);
+}
+
+.compass {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr);
+    grid-template-areas:
+        "n n n"
+        "w rose o"
+        "s s s";
+    align-items: center;
+    gap: 10px 8px;
+    margin-top: 12px;
+    text-align: center;
+}
+
+.compass_rose {
+    grid-area: rose;
+    width: 96px;
+    height: 96px;
+}
+
+.compass_n {
+    grid-area: n;
+}
+
+.compass_o {
+    grid-area: o;
+    text-align: left;
+}
+
+.compass_s {
+    grid-area: s;
+}
+
+.compass_w {
+    grid-area: w;
+    text-align: right;
+}
+
+.compass_point p {
+    margin: 0;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.compass_name {
+    color: var(--muted-color);
+    font-size: .85em;
+}
+
+.compass_degrees {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.compass_who {
+    font-size: .9em;
+}
+
+.chart_wide {
+    grid-column: 1 / -1;
+}
+
+/* Fixed heights, so that nothing below moves when the charts arrive */
+.chart {
+    height: 260px;
+}
+
+.chart_clock {
+    height: 340px;
+}
+
+.chart_calendar {
+    height: 660px;
+}
+
+.year_pick select {
+    margin-left: 6px;
+    font: inherit;
+}
+
+.chart_table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.chart_table > section {
+    max-height: 320px;
+    overflow: auto;
+}
+
+.chart_table th, .chart_table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--line-color);
+    text-align: left;
+}
+
+.chart_table td {
+    text-align: right;
+}
+
+/* On phones, the chips and the links don't fit in one row: the chips become a
+   full-width segmented control, the links a row of their own below. */
+@media only screen and (max-width: 639px) {
+    .stats_bar {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        gap: 6px;
+        padding: 8px 12px 4px;
+    }
+
+    .stats_bar .chips {
+        flex: 1 1 100%;
+        gap: 0;
+    }
+
+    .stats_bar .chip {
+        flex: 1;
+    }
+
+    .stats_bar .chip span {
+        display: block;
+        padding: 6px 4px;
+        border-radius: 0;
+        text-align: center;
+    }
+
+    .stats_bar .chip + .chip span {
+        border-left-width: 0;
+    }
+
+    .stats_bar .chip:first-of-type span {
+        border-radius: 999px 0 0 999px;
+    }
+
+    .stats_bar .chip:last-of-type span {
+        border-radius: 0 999px 999px 0;
+    }
+
+    /* Like a tab bar: the same space between all five, also at the edges */
+    .jump {
+        flex: 1 1 100%;
+        justify-content: space-evenly;
+        gap: 0;
+        padding-left: 0;
+        border-left: 0;
+    }
+
+    /* Below the two rows after a jump */
+    .stats_section {
+        scroll-margin-top: 104px;
+    }
+}
+
+@media only screen and (min-width: 768px) {
+    .chart_calendar {
+        height: 380px;
+    }
+}
+
+/* Back to the top, once the page has been scrolled down */
+.to_top {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--number-color);
+    color: #fff;
+    box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
+    cursor: pointer;
+}
+
+.to_top:focus-visible {
+    outline: 3px solid var(--link-color);
+    outline-offset: 3px;
+}
+
 /* Safari */
 @-webkit-keyframes spin {
     0% {
@@ -343,10 +749,9 @@ input:checked + .slider:before {
 }
 
 @media only screen and (min-width: 768px) {
-    /* for desktop */
-    .card {
-        margin: 20px;
-        display: inline-block;
+    #cards {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 20px;
     }
 }
 
@@ -358,7 +763,7 @@ input:checked + .slider:before {
         transform: translate(-50%, -50%);
     }
 
-    .button, .slider, .slider:before {
+    .button, [aria-busy="true"] .boards, [aria-busy="true"] .tiles, #cards[aria-busy="true"] {
         -webkit-transition: none;
         transition: none;
     }
