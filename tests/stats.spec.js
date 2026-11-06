@@ -75,6 +75,15 @@ test.describe('with a few stickers', () => {
         await expect(page.locator('.time_frame').first()).toHaveText(`in ${now.getFullYear()}`);
     });
 
+    test('shows the chips and all section links without scrolling sideways', async ({ page }) => {
+        const bar = page.locator('.stats_bar');
+
+        const { scrollWidth, clientWidth } = await bar.evaluate(element => ({ scrollWidth: element.scrollWidth, clientWidth: element.clientWidth }));
+
+        expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+        for (const link of await bar.getByRole('link').all()) await expect(link).toBeInViewport({ ratio: 1 });
+    });
+
     test('links each name to the map of that person', async ({ page }) => {
         const timo = page.locator('#board_stickers').getByRole('link', { name: 'Timo' });
 

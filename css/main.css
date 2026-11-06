@@ -274,7 +274,7 @@ a:active {
     scrollbar-width: none;
     padding: 8px 16px;
     margin-top: 12px;
-    background: rgba(255, 255, 255, .96);
+    background: #fff;
     border-bottom: 1px solid var(--line-color);
 }
 
@@ -300,6 +300,7 @@ a:active {
     padding: 6px 14px;
     border: 1px solid #c7cbd1;
     border-radius: 999px;
+    background: #fff;
     white-space: nowrap;
     cursor: pointer;
 }
@@ -537,6 +538,57 @@ a:active {
 
 .chart_table td {
     text-align: right;
+}
+
+/* On phones, the chips and the links don't fit in one row: the chips become a
+   full-width segmented control, the links a row of their own below. */
+@media only screen and (max-width: 639px) {
+    .stats_bar {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        gap: 6px;
+        padding: 8px 12px 4px;
+    }
+
+    .stats_bar .chips {
+        flex: 1 1 100%;
+        gap: 0;
+    }
+
+    .stats_bar .chip {
+        flex: 1;
+    }
+
+    .stats_bar .chip span {
+        display: block;
+        padding: 6px 4px;
+        border-radius: 0;
+        text-align: center;
+    }
+
+    .stats_bar .chip + .chip span {
+        border-left-width: 0;
+    }
+
+    .stats_bar .chip:first-of-type span {
+        border-radius: 999px 0 0 999px;
+    }
+
+    .stats_bar .chip:last-of-type span {
+        border-radius: 0 999px 999px 0;
+    }
+
+    .jump {
+        flex: 1 1 100%;
+        justify-content: space-between;
+        padding-left: 0;
+        border-left: 0;
+    }
+
+    /* Below the two rows after a jump */
+    .stats_section {
+        scroll-margin-top: 104px;
+    }
 }
 
 @media only screen and (min-width: 768px) {
