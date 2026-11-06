@@ -150,7 +150,11 @@ test.describe('with a few stickers', () => {
         await expect(page.locator('#streak')).toContainText('1 Tag');
         // Hamburg twice; Bremen is 100 km away
         await expect(page.locator('#home_share')).toContainText('33 % 2 von 6 Stickern');
-        await expect(page.locator('#compass')).toContainText('NordenKopenhagen, Dänemark, von Ana');
+        // Around the compass rose, with how far north
+        await expect(page.locator('#compass .compass_n')).toContainText('Norden 55,7° N');
+        await expect(page.locator('#compass .compass_n')).toContainText('Kopenhagen, Dänemark');
+        await expect(page.locator('#compass .compass_n')).toContainText('von Ana');
+        await expect(page.locator('#compass .compass_o')).toContainText('Osten 16,4° O');
         // Lena's first sticker is this month's, the others have older ones
         await expect(page.locator('#newcomer')).toContainText('Lena');
     });
@@ -178,6 +182,32 @@ test.describe('with a few stickers', () => {
         await expect(page.locator('#calendar_year option')).toHaveText([String(now.getFullYear()), String(now.getFullYear() - 1)].filter(
             year => stickers.some(s => s.date.startsWith(year)),
         ));
+    });
+
+    test('shows only the charts that make sense for a month', async ({ page }) => {
+        await page.locator('#wann').scrollIntoViewIfNeeded();
+        await expect(page.locator('#month_chart svg')).toBeVisible();
+        const byMonth = [];
+        page.on('request', request => {
+            if (new URL(request.url()).searchParams.get('by') === 'month') byMonth.push(request.url());
+        });
+
+        await chip(page, 'Monat').click();
+
+        await expect(page.locator('#month_chart')).toBeHidden();
+        await expect(page.locator('#total_chart')).toBeHidden();
+        // The calendar shows this month alone, without the year to pick.
+        await expect(page.locator('.year_pick')).toBeHidden();
+        await expect(page.locator('#calendar_desc')).toHaveText('Sticker an jedem Tag des Monats');
+        await expect(page.locator('#calendar_table tbody tr')).toHaveCount(1);
+        await expect(page.locator('#calendar_table tbody tr')).toContainText('2');
+        expect(byMonth).toEqual([]);
+
+        await chip(page, 'Jahr').click();
+
+        await expect(page.locator('#month_chart svg')).toBeVisible();
+        await expect(page.locator('#total_chart svg')).toBeVisible();
+        await expect(page.locator('.year_pick')).toBeVisible();
     });
 
     test('has no accessibility violations with everything loaded', async ({ page }) => {

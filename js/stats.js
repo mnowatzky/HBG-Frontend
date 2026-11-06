@@ -404,11 +404,39 @@ function loadRecords(filters) {
             : `<strong>${Math.round(share * 100)} %</strong> ${formatNumber(home.within)} von ${plural(home.total, 'Sticker', 'Stickern')}`
               + `<span class="meter" aria-hidden="true"><span style="--share: ${share.toFixed(3)}"></span></span>`;
 
-        const ends = [['north', 'Norden'], ['south', 'Süden'], ['east', 'Osten'], ['west', 'Westen']];
-        document.getElementById('compass').innerHTML = records.north
-            ? ends.map(([key, name]) => `<dt>${name}</dt><dd>${placeName(records[key])}, von ${peopleLinks(records[key].people)}</dd>`).join('')
-            : `<dt>Alle Richtungen</dt><dd>${EMPTY}</dd>`;
+        document.getElementById('compass').innerHTML = records.north ? compass(records) : `<p class="tile_text">${EMPTY}</p>`;
     });
+}
+
+// A compass rose with each farthest sticker at its side. North points blue.
+const ROSE = `<svg class="compass_rose" aria-hidden="true" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="47" fill="none" stroke="#e3e5e8" stroke-width="2"/>
+    <circle cx="50" cy="50" r="31" fill="none" stroke="#e3e5e8"/>
+    <path d="M50 4L41 50H50Z" fill="#0070c9"/><path d="M50 4L59 50H50Z" fill="#005a9e"/>
+    <path d="M96 50L50 41V50Z" fill="#9aa0a6"/><path d="M96 50L50 59V50Z" fill="#c7cbd1"/>
+    <path d="M50 96L59 50H50Z" fill="#9aa0a6"/><path d="M50 96L41 50H50Z" fill="#c7cbd1"/>
+    <path d="M4 50L50 59V50Z" fill="#9aa0a6"/><path d="M4 50L50 41V50Z" fill="#c7cbd1"/>
+    <circle cx="50" cy="50" r="4.5" fill="#fff" stroke="#3c4043" stroke-width="2"/>
+</svg>`;
+
+// "69,7° N"
+function degrees(value, positive, negative) {
+    const format = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    return `${format.format(Math.abs(value))}° ${value >= 0 ? positive : negative}`;
+}
+
+function compass(records) {
+    const ends = [
+        ['north', 'Norden', 'n', s => degrees(s.latitude, 'N', 'S')],
+        ['east', 'Osten', 'o', s => degrees(s.longitude, 'O', 'W')],
+        ['south', 'Süden', 's', s => degrees(s.latitude, 'N', 'S')],
+        ['west', 'Westen', 'w', s => degrees(s.longitude, 'O', 'W')],
+    ];
+    return ROSE + ends.map(([key, name, side, position]) => `<div class="compass_point compass_${side}">
+        <p class="compass_name">${name} <span class="compass_degrees">${position(records[key])}</span></p>
+        <p class="compass_place">${placeName(records[key])}</p>
+        <p class="compass_who">von ${peopleLinks(records[key].people)}</p>
+    </div>`).join('');
 }
 
 // Neuling and Veteran are about everyone since the start, whatever the Zeitraum.

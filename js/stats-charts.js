@@ -169,6 +169,8 @@ function monthName(key, short = false) {
 }
 
 function showMonths(counts) {
+    // A month is a single bar, so the month view leaves these charts out.
+    if (state.period === 'monat') return;
     const months = everyMonth(counts);
     table('month_table', ['Monat', 'Sticker'], months.map(([key, count]) => [monthName(key), count]).reverse());
     if (!months.length) {
@@ -209,12 +211,36 @@ function showMonths(counts) {
     });
 }
 
-// ---- Kalender: one small month each, like a wall calendar
+// ---- Kalender: one small month each, like a wall calendar, or only this month
 
 let dayCounts = [];
 
+const PIECES = [{ min: 1, max: 1, label: '1' }, { min: 2, max: 3, label: '2–3' }, { min: 4, max: 9, label: '4–9' }, { min: 10, label: '10+' }];
+
+function legend() {
+    return {
+        type: 'piecewise',
+        pieces: PIECES,
+        inRange: { color: CALENDAR_STEPS },
+        // Days without stickers in the month view
+        outOfRange: { color: EMPTY_CELL },
+        orient: 'horizontal',
+        left: 'center',
+        bottom: 4,
+        itemWidth: 14,
+        itemHeight: 14,
+        textStyle: { color: INK },
+        selectedMode: false,
+    };
+}
+
 function showYears(counts) {
     dayCounts = counts;
+    const monthly = state.period === 'monat';
+    document.querySelector('.year_pick').hidden = monthly;
+    document.getElementById('calendar_desc').textContent = `Sticker an jedem Tag des ${monthly ? 'Monats' : 'Jahres'}`;
+    if (monthly) return showThisMonth();
+
     const select = document.getElementById('calendar_year');
     const years = [...new Set(counts.map(count => count.key.slice(0, 4)))].sort().reverse();
     const chosen = years.includes(select.value) ? select.value : years[0];
@@ -263,18 +289,7 @@ function showCalendar(year) {
     draw('calendar_chart', `${plural(days.length, 'Tag', 'Tage')} mit Stickern in ${year}, `
         + `die meisten am ${dateFormat.format(parseDay(busiest[0]))}: ${formatNumber(max)}.`, {
         calendar: calendars,
-        visualMap: {
-            type: 'piecewise',
-            pieces: [{ min: 1, max: 1, label: '1' }, { min: 2, max: 3, label: '2–3' }, { min: 4, max: 9, label: '4–9' }, { min: 10, label: '10+' }],
-            inRange: { color: CALENDAR_STEPS },
-            orient: 'horizontal',
-            left: 'center',
-            bottom: 4,
-            itemWidth: 14,
-            itemHeight: 14,
-            textStyle: { color: INK },
-            selectedMode: false,
-        },
+        visualMap: legend(),
         tooltip: {
             trigger: 'item',
             formatter: item => `${dateFormat.format(parseDay(item.value[0]))}: ${plural(item.value[1], 'Sticker', 'Sticker')}`,
@@ -288,6 +303,65 @@ function showCalendar(year) {
     });
 }
 
+// This month as one large calendar: a column a weekday, a row a week, the day in
+// each cell.
+function showThisMonth() {
+    const element = document.getElementById('calendar_chart');
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const counts = new Map(dayCounts.map(count => [count.key, count.count]));
+    const length = new Date(year, month + 1, 0).getDate();
+    const days = Array.from({ length }, (_, index) => {
+        const day = `${key}-${String(index + 1).padStart(2, '0')}`;
+        const count = counts.get(day) ?? 0;
+        // White on the two darkest blues
+        return { value: [day, count], label: { color: count >= 4 ? '#fff' : INK } };
+    });
+    const stickered = days.filter(day => day.value[1] > 0).map(day => day.value);
+    table('calendar_table', ['Tag', 'Sticker'], stickered.map(([day, count]) => [dateFormat.format(parseDay(day)), count]));
+
+    const width = element.clientWidth;
+    const cell = Math.max(28, Math.min(56, Math.floor((width - 16) / 7)));
+    // Monday first
+    const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+    const weeks = Math.ceil((offset + length) / 7);
+    const top = 30;
+    element.style.height = `${top + weeks * cell + 56}px`;
+    chartIn('calendar_chart').resize();
+
+    const busiest = stickered.reduce((a, b) => (b[1] > a[1] ? b : a), stickered[0]);
+    draw('calendar_chart', busiest
+        ? `${plural(stickered.length, 'Tag', 'Tage')} mit Stickern im ${MONTHS[month]}, `
+          + `die meisten am ${dateFormat.format(parseDay(busiest[0]))}: ${formatNumber(busiest[1])}.`
+        : `Noch keine Sticker im ${MONTHS[month]}.`, {
+        calendar: {
+            range: key,
+            orient: 'vertical',
+            left: Math.round((width - 7 * cell) / 2),
+            top,
+            cellSize: cell,
+            dayLabel: { firstDay: 1, nameMap: ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'], position: 'start', margin: 8, color: MUTED },
+            monthLabel: { show: false },
+            yearLabel: { show: false },
+            splitLine: { show: false },
+            itemStyle: { color: EMPTY_CELL, borderColor: '#fff', borderWidth: 3 },
+        },
+        visualMap: legend(),
+        tooltip: {
+            trigger: 'item',
+            formatter: item => `${dateFormat.format(parseDay(item.value[0]))}: ${plural(item.value[1], 'Sticker', 'Sticker')}`,
+        },
+        series: [{
+            type: 'heatmap',
+            coordinateSystem: 'calendar',
+            data: days,
+            label: { show: true, formatter: item => String(Number(item.value[0].slice(8))), fontSize: 13 },
+        }],
+    });
+}
+
 document.getElementById('calendar_year').addEventListener('change', event => showCalendar(event.target.value));
 
 let calendarWidth = 0;
@@ -295,17 +369,22 @@ new ResizeObserver(([entry]) => {
     // Lays the months out again when the width changes, as when a phone turns.
     if (Math.abs(entry.contentRect.width - calendarWidth) < 1) return;
     calendarWidth = entry.contentRect.width;
-    if (dayCounts.length) showCalendar(document.getElementById('calendar_year').value);
+    if (state.period === 'monat') showThisMonth();
+    else if (dayCounts.length) showCalendar(document.getElementById('calendar_year').value);
 }).observe(document.getElementById('calendar_chart'));
 
 // ---- Loading
 
 function loadCharts(filters) {
     const counts = by => () => fetchStats('/counts', { ...filters, by });
+    const monthly = state.period === 'monat';
+    for (const id of ['month_chart', 'total_chart']) {
+        document.getElementById(id).closest('.chart_box').hidden = monthly;
+    }
     return Promise.all([
         update('hours', counts('hour'), showHours),
         update('weekdays', counts('weekday'), showWeekdays),
-        update('months', counts('month'), showMonths),
+        monthly ? null : update('months', counts('month'), showMonths),
         update('days', counts('day'), showYears),
     ]);
 }

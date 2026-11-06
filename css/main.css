@@ -544,18 +544,59 @@ a:active {
 
 .compass {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 6px 12px;
-    margin: 8px 0 0;
-    line-height: 1.4;
+    grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr);
+    grid-template-areas:
+        "n n n"
+        "w rose o"
+        "s s s";
+    align-items: center;
+    gap: 10px 8px;
+    margin-top: 12px;
+    text-align: center;
 }
 
-.compass dt {
-    color: var(--muted-color);
+.compass_rose {
+    grid-area: rose;
+    width: 96px;
+    height: 96px;
 }
 
-.compass dd {
+.compass_n {
+    grid-area: n;
+}
+
+.compass_o {
+    grid-area: o;
+    text-align: left;
+}
+
+.compass_s {
+    grid-area: s;
+}
+
+.compass_w {
+    grid-area: w;
+    text-align: right;
+}
+
+.compass_point p {
     margin: 0;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.compass_name {
+    color: var(--muted-color);
+    font-size: .85em;
+}
+
+.compass_degrees {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.compass_who {
+    font-size: .9em;
 }
 
 .chart_wide {
