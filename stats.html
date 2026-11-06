@@ -26,105 +26,7 @@
     <link rel="stylesheet" href="css/main.css">
 
     <script src="js/api.js"></script>
-    <script type="text/javascript">
-        // /stats/summary of the API for all time, this month and last month
-        const summaries = {total: null, currMonth: null, lastMonth: null};
-
-        const d = new Date();
-
-        // The start of a month in the visitor's time zone, offset months from this one
-        function monthStart(offset) {
-            return new Date(d.getFullYear(), d.getMonth() + offset, 1).toISOString();
-        }
-
-        function showSummary(summary) {
-            const counts = [summary.stickers, summary.cities, summary.countries, summary.people];
-            ["stickercount", "citycount", "countrycount", "namecount"].forEach((id, idx) => {
-                document.getElementById(id).innerText = counts[idx].toString();
-                pluralizeDesc(idx, counts[idx]);
-            });
-        }
-
-        function setDiff (textID, arrowID, diff) {
-            const arrow_up = "bilder/arrow_up.svg";
-            const arrow_down = "bilder/arrow_down.svg";
-            const arrow_neutral = "bilder/arrow_neutral.svg";
-            //hide elements
-            document.getElementById(textID).style.visibility = "hidden";
-            document.getElementById(arrowID).style.visibility = "hidden";
-
-            document.getElementById(textID).innerText = diff.toString();
-
-            if (diff < 0) {
-                document.getElementById(arrowID).src = arrow_down;
-                document.getElementById(textID).style.color = 'red';
-            } else if (diff > 0) {
-                document.getElementById(arrowID).src = arrow_up;
-                document.getElementById(textID).style.color = 'var(--increase-color)';
-            } else {
-                document.getElementById(arrowID).src = arrow_neutral;
-                document.getElementById(textID).style.color = 'gray';
-            }
-
-        }
-
-        function pluralizeDesc(descIdx, count) {
-            const singular = ["geklebter Sticker", "beklebte Stadt", "erobertes Land", "Stickerverteiler"];
-            const plural = ["geklebte Sticker", "beklebte Städte", "eroberte Länder", "Stickerverteiler"];
-            const descIds = ["sticker_desc", "city_desc", "country_desc", "name_desc"];
-
-            if (count === 1) {
-                document.getElementById(descIds[descIdx]).innerText = singular[descIdx];
-            } else {
-                document.getElementById(descIds[descIdx]).innerText = plural[descIdx];
-            }
-        }
-
-        function switchStats() {
-            if (!summaries.total) return; // not loaded yet
-            const monthly = document.getElementById("timeswitcher").checked;
-
-            if (monthly) {
-                //change all texts with class time_frame to "im {current month}"
-                document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "im " + d.toLocaleString('de', { month: 'long' }));
-                showSummary(summaries.currMonth);
-
-                //show difference to last month
-                document.querySelectorAll(".diff").forEach(diff => diff.style.visibility = "visible");
-                document.querySelectorAll(".change_arrow").forEach(arrow => arrow.style.visibility = "visible");
-            } else {
-                //change all texts with class time_frame to "Insgesamt"
-                document.querySelectorAll(".time_frame").forEach(tf => tf.innerText = "Insgesamt");
-                showSummary(summaries.total);
-
-                //hide difference to last month
-                document.querySelectorAll(".diff").forEach(diff => diff.style.visibility = "hidden");
-                document.querySelectorAll(".change_arrow").forEach(arrow => arrow.style.visibility = "hidden");
-            }
-        }
-
-        window.onload = async function () {
-            try {
-                [summaries.total, summaries.currMonth, summaries.lastMonth] = await Promise.all([
-                    fetchStats('/summary'),
-                    fetchStats('/summary', {since: monthStart(0)}),
-                    fetchStats('/summary', {since: monthStart(-1), until: monthStart(0)}),
-                ]);
-            } catch (error) {
-                console.error(error);
-                document.getElementById("load_error").style.display = "block";
-                return;
-            }
-
-            showSummary(summaries.total);
-
-            const change = key => summaries.currMonth[key] - summaries.lastMonth[key];
-            setDiff("total_diff", "total_arrow", change("stickers"));
-            setDiff("city_diff", "city_arrow", change("cities"));
-            setDiff("country_diff", "country_arrow", change("countries"));
-            setDiff("name_diff", "name_arrow", change("people"));
-        }
-    </script>
+    <script src="js/stats.js" defer></script>
 </head>
 <body>
 
@@ -134,13 +36,20 @@
 <main>
 <p id="load_error" role="alert" style="display: none; text-align: center; color: red">Sticker konnten nicht geladen werden</p>
 
-<div class="timechooser">
-    <p class="timechoose_desc">Insgesamt</p>
-    <label class="switch">
-      <input type="checkbox" id="timeswitcher" role="switch" aria-labelledby="thismonth" onclick="switchStats()">
-      <span class="slider"></span>
-    </label>
-    <p class="timechoose_desc" id="thismonth">Dieser Monat</p>
+<div class="stats_bar">
+    <fieldset class="chips">
+        <legend class="visually_hidden">Zeitraum</legend>
+        <label class="chip"><input type="radio" name="period" value="monat"><span>Monat</span></label>
+        <label class="chip"><input type="radio" name="period" value="jahr"><span>Jahr</span></label>
+        <label class="chip"><input type="radio" name="period" value="insgesamt" checked><span>Insgesamt</span></label>
+    </fieldset>
+    <nav class="jump" aria-label="Abschnitte">
+        <a href="#ranglisten">Ranglisten</a>
+        <a href="#weiteste">Weiteste</a>
+        <a href="#rekorde">Rekorde</a>
+        <a href="#wann">Wann</a>
+        <a href="#wo">Wo</a>
+    </nav>
 </div>
 
 <div id="cards">
@@ -158,14 +67,14 @@
         <img src="data:," alt class="change_arrow" id="city_arrow" style="visibility: hidden;">
         <p class="stat_desc" id="city_desc">beklebte Städte</p>
     </div>
-    <a class="card" href="/bar_chart?data=countries">
+    <a class="card" href="#wo">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="countrycount" class="stat_int"></p>
         <p id="country_diff" class="diff"></p>
         <img src="data:," alt class="change_arrow" id="country_arrow" style="visibility: hidden;">
         <p class="stat_desc" id="country_desc">eroberte Länder</p>
     </a>
-    <a class="card" href="/bar_chart?data=names">
+    <a class="card" href="#ranglisten">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="namecount" class="stat_int"></p>
         <p id="name_diff" class="diff"></p>
@@ -173,6 +82,183 @@
         <p class="stat_desc" id="name_desc">Stickerverteiler</p>
     </a>
 </div>
+
+<!-- Always the newest, whatever the Zeitraum -->
+<section class="stats_section" aria-labelledby="latest_title">
+    <div class="tiles">
+        <div class="tile">
+            <h2 id="latest_title">Neuester Sticker</h2>
+            <p id="latest" class="tile_text">Lädt …</p>
+        </div>
+        <div class="tile">
+            <h2>Sticker-König(in) des Monats</h2>
+            <p id="king" class="tile_text">Lädt …</p>
+        </div>
+    </div>
+</section>
+
+<section id="ranglisten" class="stats_section" aria-labelledby="ranglisten_title">
+    <h2 id="ranglisten_title" class="section_title">Ranglisten</h2>
+    <div class="boards">
+        <div class="board" id="board_stickers">
+            <h3>Sticker pro Person</h3>
+            <p class="board_desc">Alle Stickerverteiler. Ein Name führt zu seiner Karte.</p>
+            <label class="search">
+                <span class="visually_hidden">Name suchen</span>
+                <input type="search" id="name_search" placeholder="Name suchen" autocomplete="off">
+            </label>
+            <ol class="ranking"></ol>
+            <p class="no_match board_desc" hidden>Niemand mit diesem Namen</p>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+        <div class="board" id="board_night">
+            <h3>Nachteulen</h3>
+            <p class="board_desc">Sticker zwischen 22 und 6 Uhr Ortszeit</p>
+            <ol class="ranking"></ol>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+        <div class="board" id="board_countries">
+            <h3>Globetrotter</h3>
+            <p class="board_desc">Die meisten Länder</p>
+            <ol class="ranking"></ol>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+        <div class="board" id="board_cities">
+            <h3>Städtesammler</h3>
+            <p class="board_desc">Die meisten Städte</p>
+            <ol class="ranking"></ol>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+        <div class="board" id="board_weekend">
+            <h3>Wochenendkrieger</h3>
+            <p class="board_desc">Sticker am Samstag und Sonntag</p>
+            <ol class="ranking"></ol>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+        <div class="board" id="board_travelled">
+            <h3>Kilometerfresser</h3>
+            <p class="board_desc">Luftlinie zwischen den eigenen Stickern</p>
+            <ol class="ranking"></ol>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+        <div class="board" id="board_pairs">
+            <h3>Dream-Teams</h3>
+            <p class="board_desc">Am häufigsten zusammen geklebt</p>
+            <ol class="ranking"></ol>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+    </div>
+</section>
+
+<section id="weiteste" class="stats_section" aria-labelledby="weiteste_title">
+    <h2 id="weiteste_title" class="section_title">Am weitesten weg</h2>
+    <fieldset class="chips">
+        <legend class="visually_hidden">Gemessen</legend>
+        <label class="chip"><input type="radio" name="origin" value="home" checked><span>von Norderstedt</span></label>
+        <label class="chip"><input type="radio" name="origin" value="me"><span>von mir</span></label>
+    </fieldset>
+    <p id="origin_status" class="board_desc" role="status"></p>
+    <div class="boards">
+        <div class="tile">
+            <h3>Der weiteste Sticker</h3>
+            <p id="farthest_sticker" class="tile_text">Lädt …</p>
+        </div>
+        <div class="board" id="board_farthest">
+            <h3>Die Top 5</h3>
+            <p class="board_desc">Der weiteste Sticker jeder Person, in Luftlinie</p>
+            <ol class="ranking"></ol>
+        </div>
+    </div>
+</section>
+
+<section id="rekorde" class="stats_section" aria-labelledby="rekorde_title">
+    <h2 id="rekorde_title" class="section_title">Rekorde</h2>
+    <div class="tiles">
+        <div class="tile">
+            <h3>Rekordtag</h3>
+            <p class="board_desc">Die meisten Sticker an einem Tag</p>
+            <p id="record_day" class="tile_text"></p>
+        </div>
+        <div class="tile">
+            <h3>Längste Serie</h3>
+            <p class="board_desc">Die meisten Tage am Stück mit mindestens einem Sticker</p>
+            <p id="streak" class="tile_text"></p>
+        </div>
+        <div class="tile">
+            <h3>Heimatquote</h3>
+            <p class="board_desc">Sticker im Umkreis von 25 km um Norderstedt</p>
+            <p id="home_share" class="tile_text"></p>
+        </div>
+        <div class="tile">
+            <h3>Himmelsrichtungen</h3>
+            <p class="board_desc">Die Sticker am weitesten im Norden, Süden, Osten und Westen</p>
+            <dl id="compass" class="compass"></dl>
+        </div>
+        <div class="tile">
+            <h3>Neuling</h3>
+            <p class="board_desc">Der neueste Stickerverteiler, seit Beginn</p>
+            <p id="newcomer" class="tile_text"></p>
+        </div>
+        <div class="tile">
+            <h3>Veteran</h3>
+            <p class="board_desc">Die längste Zeit zwischen dem ersten und dem letzten Sticker, seit Beginn</p>
+            <p id="veteran" class="tile_text"></p>
+        </div>
+    </div>
+</section>
+
+<section id="wann" class="stats_section" aria-labelledby="wann_title">
+    <h2 id="wann_title" class="section_title">Wann wird geklebt?</h2>
+    <p id="charts_status" class="board_desc" role="status"></p>
+    <div class="boards">
+        <figure class="chart_box">
+            <figcaption><h3>Uhrzeit</h3><p class="board_desc">Ortszeit, wo der Sticker klebt</p></figcaption>
+            <div class="chart chart_clock" id="hour_chart"></div>
+            <details class="chart_table"><summary>Als Tabelle</summary><section id="hour_table" tabindex="0" aria-label="Uhrzeit als Tabelle"></section></details>
+        </figure>
+        <figure class="chart_box">
+            <figcaption><h3>Wochentage</h3><p class="board_desc">Ortszeit, wo der Sticker klebt</p></figcaption>
+            <div class="chart" id="weekday_chart"></div>
+            <details class="chart_table"><summary>Als Tabelle</summary><section id="weekday_table" tabindex="0" aria-label="Wochentage als Tabelle"></section></details>
+        </figure>
+        <figure class="chart_box chart_wide">
+            <figcaption><h3>Sticker pro Monat</h3></figcaption>
+            <div class="chart" id="month_chart"></div>
+            <details class="chart_table"><summary>Als Tabelle</summary><section id="month_table" tabindex="0" aria-label="Sticker pro Monat als Tabelle"></section></details>
+        </figure>
+        <figure class="chart_box chart_wide">
+            <figcaption><h3>Sticker insgesamt</h3><p class="board_desc">Alle bis zum Ende des Monats</p></figcaption>
+            <div class="chart" id="total_chart"></div>
+        </figure>
+        <figure class="chart_box chart_wide">
+            <figcaption>
+                <h3>Kalender</h3>
+                <p class="board_desc">Sticker an jedem Tag des Jahres</p>
+                <label class="year_pick">Jahr <select id="calendar_year"></select></label>
+            </figcaption>
+            <div class="chart chart_calendar" id="calendar_chart"></div>
+            <details class="chart_table"><summary>Als Tabelle</summary><section id="calendar_table" tabindex="0" aria-label="Kalender als Tabelle"></section></details>
+        </figure>
+    </div>
+</section>
+
+<section id="wo" class="stats_section" aria-labelledby="wo_title">
+    <h2 id="wo_title" class="section_title">Wo wird geklebt?</h2>
+    <div class="boards">
+        <div class="board" id="board_city_counts">
+            <h3>Städte</h3>
+            <p class="board_desc">Die meisten Sticker</p>
+            <ol class="ranking"></ol>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+        <div class="board" id="board_country_counts">
+            <h3>Länder</h3>
+            <p class="board_desc">Die meisten Sticker</p>
+            <ol class="ranking"></ol>
+            <button type="button" class="show_all" hidden>Alle anzeigen</button>
+        </div>
+    </div>
+</section>
 </main>
 
 <p style="margin: 20px"><a href="/datenschutz" class="footer_link">Datenschutz</a></p>

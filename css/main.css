@@ -209,75 +209,6 @@ a:active {
     animation: spin 2s linear infinite;
 }
 
-.timechooser {
-    display: inline-block;
-    left: 50%;
-    position: relative;
-    margin-top: 10px;
-    transform: translate(-50%, 0);
-}
-
-.timechoose_desc {
-    display: inline-block;
-    margin: 10px;
-}
-
-/* Rounded sliders */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-    vertical-align: middle;
-}
-  
-.switch input { 
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-  
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--main-color);
-    border-radius: 34px;
-    -webkit-transition: .4s;
-    transition: .4s;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    border-radius: 50%;
-    background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
-}
-  
-input:checked + .slider {
-    background-color: var(--main-color);
-}
-  
-input:focus-visible + .slider {
-    outline: 3px solid #174ea6;
-    outline-offset: 2px;
-}
-  
-input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
-}
-
 .footer_link:link, .footer_link:visited {
     color: #3c4043;
     text-decoration: underline;
@@ -319,6 +250,301 @@ input:checked + .slider:before {
     text-decoration: underline;
 }
 
+/* Elements with a display of their own, like grid rows, stay hidden too. */
+[hidden] {
+    display: none !important;
+}
+
+/* The statistics page, /stats */
+:root {
+    --muted-color: #5f6368;
+    --line-color: #e3e5e8;
+    --link-color: #174ea6;
+}
+
+/* The Zeitraum chips and the links to the sections stay at the top. */
+.stats_bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 8px 16px;
+    margin-top: 12px;
+    background: rgba(255, 255, 255, .96);
+    border-bottom: 1px solid var(--line-color);
+}
+
+.chips {
+    display: flex;
+    flex: none;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* The radio button stays focusable, its label is the chip. */
+.chip input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.chip span {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 1px solid #c7cbd1;
+    border-radius: 999px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.chip input:checked + span {
+    background: var(--number-color);
+    border-color: var(--number-color);
+    color: #fff;
+}
+
+.chip input:focus-visible + span {
+    outline: 3px solid var(--link-color);
+    outline-offset: 2px;
+}
+
+.jump {
+    display: flex;
+    flex: none;
+    gap: 16px;
+    padding-left: 12px;
+    border-left: 1px solid var(--line-color);
+}
+
+.jump a {
+    padding: 6px 0;
+    white-space: nowrap;
+    text-decoration: underline;
+    text-decoration-color: var(--line-color);
+}
+
+.stats_section {
+    max-width: 1100px;
+    margin: 32px auto;
+    padding: 0 16px;
+    /* Below the sticky bar after a jump */
+    scroll-margin-top: 64px;
+}
+
+.section_title {
+    font-size: 1.8em;
+    margin: 0 0 12px;
+}
+
+.stats_section .chips {
+    margin-bottom: 8px;
+}
+
+.boards, .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 16px;
+}
+
+.board, .tile, .chart_box {
+    margin: 0;
+    padding: 16px;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: rgba(60, 64, 67, .3) 0 1px 3px 0, rgba(60, 64, 67, .15) 0 4px 8px 3px;
+}
+
+.board h3, .tile h2, .tile h3, .chart_box h3 {
+    margin: 0;
+    font-size: 1.3em;
+}
+
+.board_desc {
+    margin: 2px 0 10px;
+    color: var(--muted-color);
+    font-size: .9em;
+}
+
+[aria-busy="true"] .boards, [aria-busy="true"] .tiles, #cards[aria-busy="true"] {
+    opacity: .5;
+    transition: opacity .2s;
+}
+
+.ranking {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rank_row {
+    display: grid;
+    grid-template-columns: 2.2em 1fr auto;
+    column-gap: 8px;
+    align-items: baseline;
+    padding: 6px 0;
+}
+
+.rank {
+    text-align: center;
+    color: var(--muted-color);
+}
+
+.rank_name {
+    overflow-wrap: anywhere;
+}
+
+.rank_detail {
+    display: block;
+    color: var(--muted-color);
+    font-size: .85em;
+}
+
+.rank_value {
+    color: var(--number-color);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.rank_bar {
+    grid-column: 2 / 4;
+    width: calc(var(--share) * 100%);
+    min-width: 3px;
+    height: 6px;
+    margin-top: 4px;
+    border-radius: 3px;
+    background: var(--main-color);
+}
+
+.empty {
+    color: var(--muted-color);
+    padding: 6px 0;
+}
+
+.search input {
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    border: 1px solid #c7cbd1;
+    border-radius: 8px;
+    font: inherit;
+}
+
+.show_all, .chart_table summary {
+    padding: 8px 0;
+    border: 0;
+    background: none;
+    color: var(--link-color);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.tile_text {
+    margin: 8px 0 0;
+    font-size: 1.1em;
+    line-height: 1.5;
+}
+
+.tile_text strong {
+    color: var(--number-color);
+    font-size: 1.5em;
+    font-weight: 500;
+}
+
+.tile_text a, .compass a {
+    color: var(--link-color);
+    text-decoration: underline;
+}
+
+.meter {
+    display: block;
+    height: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: var(--line-color);
+}
+
+.meter span {
+    display: block;
+    width: calc(var(--share) * 100%);
+    height: 100%;
+    background: var(--number-color);
+}
+
+.compass {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 12px;
+    margin: 8px 0 0;
+    line-height: 1.4;
+}
+
+.compass dt {
+    color: var(--muted-color);
+}
+
+.compass dd {
+    margin: 0;
+}
+
+.chart_wide {
+    grid-column: 1 / -1;
+}
+
+/* Fixed heights, so that nothing below moves when the charts arrive */
+.chart {
+    height: 260px;
+}
+
+.chart_clock {
+    height: 340px;
+}
+
+.chart_calendar {
+    height: 660px;
+}
+
+.year_pick select {
+    margin-left: 6px;
+    font: inherit;
+}
+
+.chart_table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.chart_table > section {
+    max-height: 320px;
+    overflow: auto;
+}
+
+.chart_table th, .chart_table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--line-color);
+    text-align: left;
+}
+
+.chart_table td {
+    text-align: right;
+}
+
+@media only screen and (min-width: 768px) {
+    .chart_calendar {
+        height: 380px;
+    }
+}
+
 /* Safari */
 @-webkit-keyframes spin {
     0% {
@@ -358,7 +584,7 @@ input:checked + .slider:before {
         transform: translate(-50%, -50%);
     }
 
-    .button, .slider, .slider:before {
+    .button, [aria-busy="true"] .boards, [aria-busy="true"] .tiles, #cards[aria-busy="true"] {
         -webkit-transition: none;
         transition: none;
     }

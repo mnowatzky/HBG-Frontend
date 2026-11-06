@@ -3,6 +3,10 @@
 // put its URL here and add this site to STICKER_CORS_ORIGINS in the API's .env.
 const API_BASE_URL = '/api';
 
+// The place in Norderstedt that the statistics measure "von Norderstedt" from.
+// HBG-Fast-API has the same point as HOME in src/stats.py.
+const HOME = { latitude: 53.67549805330424, longitude: 9.980945457552263 };
+
 async function fetchApi(path, params) {
     const response = await fetch(`${API_BASE_URL}${path}?${new URLSearchParams(params)}`);
 
@@ -44,8 +48,8 @@ async function* fetchAllStickers(params, limit = 5000) {
     }
 }
 
-// The statistics, computed by the API: /summary, /counts or /farthest.
-// Takes the filters of /stickers, like since and until as ISO times.
+// The statistics, computed by the API, like /summary, /counts or /people.
+// Takes the filters of /stickers, like since_day and until_day as dates.
 async function fetchStats(path, params = {}) {
     return (await fetchApi(`/stats${path}`, params)).json();
 }
