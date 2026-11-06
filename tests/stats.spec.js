@@ -51,15 +51,20 @@ test.describe('with a few stickers', () => {
         const month = now.toLocaleString('de', { month: 'long' });
         await expect(page.locator('.time_frame').first()).toHaveText(`im ${month}`);
         await expect(page.locator('#stickercount')).toHaveText('2');
-        await expect(page.locator('#total_diff')).toHaveText('-1');
+        const before = new Date(now.getFullYear(), now.getMonth() - 1, 1).toLocaleString('de', { month: 'long' });
+        // The visible number, and the sentence for screen readers
+        await expect(page.locator('#total_diff [aria-hidden="true"]:not(svg)')).toHaveText('1');
+        await expect(page.locator('#total_diff .visually_hidden')).toHaveText(`1 weniger als im ${before}`);
+        await expect(page.locator('#total_diff')).toHaveClass(/diff_down/);
         await expect(page.locator('#citycount')).toHaveText('2');
-        await expect(page.locator('#city_diff')).toHaveText('-1');
+        await expect(page.locator('#city_diff')).toContainText('1 weniger als im');
         await expect(page.locator('#countrycount')).toHaveText('2');
         // Germany and Austria against Germany and Denmark
-        await expect(page.locator('#country_diff')).toHaveText('0');
+        await expect(page.locator('#country_diff .visually_hidden')).toHaveText(`so viele wie im ${before}`);
+        await expect(page.locator('#country_diff')).toHaveClass(/diff_same/);
         // Timo and Lena against Timo, Malte and Ana
         await expect(page.locator('#namecount')).toHaveText('2');
-        await expect(page.locator('#name_diff')).toHaveText('-1');
+        await expect(page.locator('#name_diff')).toContainText('1 weniger als im');
         await expect(rows(page, 'board_stickers')).toHaveText([/Timo\s*2/, /Lena\s*1/]);
     });
 
@@ -90,6 +95,24 @@ test.describe('with a few stickers', () => {
         const tops = await page.locator('.card').evaluateAll(cards => cards.map(card => Math.round(card.getBoundingClientRect().top)));
 
         expect(new Set(tops).size).toBe(testInfo.project.name === 'mobile' ? 2 : 1);
+    });
+
+    test('shows no change before a month is chosen', async ({ page }) => {
+        await expect(page.locator('#stickercount')).toHaveText('6');
+
+        await expect(page.locator('.diff')).toHaveCount(4);
+        for (const diff of await page.locator('.diff').all()) await expect(diff).toBeHidden();
+    });
+
+    test('marks the section in view in the links', async ({ page }) => {
+        const links = page.locator('.jump a');
+        await expect(links.locator('[aria-current]')).toHaveCount(0);
+        await expect(page.locator('[aria-current]')).toHaveCount(0);
+
+        await page.locator('.jump a', { hasText: 'Rekorde' }).click();
+
+        await expect(page.locator('.jump a[aria-current="true"]')).toHaveText('Rekorde');
+        await expect(page.locator('.jump a[aria-current]')).toHaveCount(1);
     });
 
     test('offers a way back to the top once scrolled down', async ({ page }) => {

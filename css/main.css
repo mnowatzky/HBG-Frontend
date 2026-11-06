@@ -144,13 +144,13 @@ a:active {
     /* The number's size follows the card's width (cqi). */
     container-type: inline-size;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     /* The change from last month shows only for a month, when the number is small,
        so it fits next to it. */
     grid-template-areas:
-        "frame frame frame"
-        "number diff arrow"
-        "desc desc desc";
+        "frame frame"
+        "number diff"
+        "desc desc";
     align-items: center;
     column-gap: 4px;
     min-width: 0;
@@ -178,12 +178,6 @@ a:active {
 .card .diff {
     grid-area: diff;
     align-self: end;
-    margin-bottom: 6px;
-}
-
-.card .change_arrow {
-    grid-area: arrow;
-    align-self: end;
     margin-bottom: 8px;
 }
 
@@ -210,16 +204,33 @@ a:active {
     overflow-wrap: anywhere;
 }
 
-.change_arrow {
-    width: 20px;
-    height: 20px;
+/* A pill with an arrow and the change, like "↓ 30" */
+.diff {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin: 0;
+    padding: 2px 9px 2px 7px;
+    border-radius: 999px;
+    font-size: .95em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    white-space: nowrap;
 }
 
-.diff {
-    margin: 0;
+.diff_up {
+    background: #e6f4ea;
     color: var(--increase-color);
-    font-size: 1.3em;
-    line-height: 1;
+}
+
+.diff_down {
+    background: #fce8e6;
+    color: #c5221f;
+}
+
+.diff_same {
+    background: #f1f3f4;
+    color: var(--muted-color);
 }
 
 #divider {
@@ -358,10 +369,27 @@ a:active {
 }
 
 .jump a {
-    padding: 6px 0;
+    position: relative;
+    padding: 6px 0 9px;
+    color: var(--muted-color);
+    text-align: center;
     white-space: nowrap;
-    text-decoration: underline;
-    text-decoration-color: var(--line-color);
+}
+
+/* The section in view, set by stats.js */
+.jump a[aria-current] {
+    color: var(--number-color);
+}
+
+.jump a[aria-current]::after {
+    content: "";
+    position: absolute;
+    right: 15%;
+    bottom: 2px;
+    left: 15%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--number-color);
 }
 
 .stats_section {
@@ -611,9 +639,11 @@ a:active {
         border-radius: 0 999px 999px 0;
     }
 
+    /* Like a tab bar: the same space between all five, also at the edges */
     .jump {
         flex: 1 1 100%;
-        justify-content: space-between;
+        justify-content: space-evenly;
+        gap: 0;
         padding-left: 0;
         border-left: 0;
     }

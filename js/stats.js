@@ -154,26 +154,25 @@ function pluralizeDesc(descIdx, count) {
     document.getElementById(descIds[descIdx]).innerText = count === 1 ? singular[descIdx] : many[descIdx];
 }
 
-// The change from last month next to a card, or nothing with diff null
-function setDiff(textID, arrowID, diff) {
-    const text = document.getElementById(textID);
-    const arrow = document.getElementById(arrowID);
-    const visibility = diff === null ? 'hidden' : 'visible';
-    text.style.visibility = visibility;
-    arrow.style.visibility = visibility;
+const ARROWS = { up: 'M12 19V5M6 11l6-6 6 6', down: 'M12 5v14M6 13l6 6 6-6' };
+
+// The change from last month on a card, as a pill with an arrow, or nothing with
+// diff null. Screen readers get it as a sentence.
+function setDiff(id, diff) {
+    const element = document.getElementById(id);
+    element.hidden = diff === null;
     if (diff === null) return;
 
-    text.innerText = diff.toString();
-    if (diff < 0) {
-        arrow.src = 'bilder/arrow_down.svg';
-        text.style.color = 'red';
-    } else if (diff > 0) {
-        arrow.src = 'bilder/arrow_up.svg';
-        text.style.color = 'var(--increase-color)';
-    } else {
-        arrow.src = 'bilder/arrow_neutral.svg';
-        text.style.color = 'gray';
-    }
+    const now = new Date();
+    const before = monthFormat.format(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    const amount = formatNumber(Math.abs(diff));
+    const direction = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
+    const icon = direction === 'same' ? '' : `<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none"
+        stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${ARROWS[direction]}"/></svg>`;
+    const sentence = { up: `${amount} mehr als im ${before}`, down: `${amount} weniger als im ${before}`, same: `so viele wie im ${before}` }[direction];
+    element.className = `diff diff_${direction}`;
+    element.innerHTML = `${icon}<span aria-hidden="true">${direction === 'same' ? '±0' : amount}</span>`
+        + `<span class="visually_hidden">${sentence}</span>`;
 }
 
 function loadCards(filters) {
@@ -185,10 +184,10 @@ function loadCards(filters) {
         document.querySelectorAll('.time_frame').forEach(element => element.innerText = periodName(state.period));
         showSummary(summary);
         const change = key => before ? summary[key] - before[key] : null;
-        setDiff('total_diff', 'total_arrow', change('stickers'));
-        setDiff('city_diff', 'city_arrow', change('cities'));
-        setDiff('country_diff', 'country_arrow', change('countries'));
-        setDiff('name_diff', 'name_arrow', change('people'));
+        setDiff('total_diff', change('stickers'));
+        setDiff('city_diff', change('cities'));
+        setDiff('country_diff', change('countries'));
+        setDiff('name_diff', change('people'));
     });
 }
 
@@ -498,6 +497,30 @@ function watchScrolling() {
     });
 }
 
+// ---- The section links show where you are
+
+// The current section is the last one whose top has passed below the sticky bar,
+// or the last of all at the end of the page.
+function watchSections() {
+    const links = [...document.querySelectorAll('.jump a')];
+    const bar = document.querySelector('.stats_bar');
+    let scheduled = false;
+    const mark = () => {
+        scheduled = false;
+        const line = bar.getBoundingClientRect().bottom + 24;
+        const atEnd = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+        const passed = links.filter(link => document.querySelector(link.hash).getBoundingClientRect().top <= line);
+        const current = atEnd ? links[links.length - 1] : passed[passed.length - 1];
+        links.forEach(link => (link === current ? link.setAttribute('aria-current', 'true') : link.removeAttribute('aria-current')));
+    };
+    addEventListener('scroll', () => {
+        if (!scheduled) requestAnimationFrame(mark);
+        scheduled = true;
+    }, { passive: true });
+    addEventListener('resize', mark);
+    mark();
+}
+
 // ---- Start
 
 document.querySelectorAll('input[name=period]').forEach(input => input.addEventListener('change', () => {
@@ -518,3 +541,4 @@ loadPeriod();
 loadAlways();
 watchCharts();
 watchScrolling();
+watchSections();
