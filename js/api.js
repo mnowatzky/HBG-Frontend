@@ -54,9 +54,10 @@ async function fetchStats(path, params = {}) {
     return (await fetchApi(`/stats${path}`, params)).json();
 }
 
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
 // Names are free text from anyone, so they must not be inserted into HTML as they are.
+// Quotes are escaped too, so the result is safe in element text and in quoted attributes.
 function escapeHtml(text) {
-    const element = document.createElement('div');
-    element.textContent = text;
-    return element.innerHTML;
+    return String(text).replace(/[&<>"']/g, character => HTML_ESCAPES[character]);
 }

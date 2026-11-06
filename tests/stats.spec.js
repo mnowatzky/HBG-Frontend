@@ -115,6 +115,11 @@ test.describe('with a few stickers', () => {
         await expect(page.locator('#hour_chart svg')).toBeVisible();
         await expect(page.locator('#calendar_chart svg')).toBeVisible();
         expect(charts).toHaveLength(1);
+        // Each chart's own tooltip keeps the defaults, so that it stays on a phone's screen.
+        for (const id of ['hour_chart', 'weekday_chart', 'month_chart', 'total_chart', 'calendar_chart']) {
+            const tooltip = await page.evaluate(id => echarts.getInstanceByDom(document.getElementById(id)).getOption().tooltip[0], id);
+            expect(tooltip, id).toMatchObject({ confine: true, textStyle: { fontFamily: 'Oswald, sans-serif' } });
+        }
         await expect(page.locator('#hour_table tbody tr')).toHaveCount(24);
         await expect(page.locator('#weekday_table tbody tr')).toHaveCount(7);
         await expect(page.locator('#calendar_year option')).toHaveText([String(now.getFullYear()), String(now.getFullYear() - 1)].filter(
@@ -219,6 +224,18 @@ test.describe('without the location', () => {
         await expect(page.locator('#origin_status')).toHaveText(/gemessen wird von Norderstedt/);
         await expect(page.getByRole('radio', { name: 'von Norderstedt' })).toBeChecked();
     });
+});
+
+test('shows names with quotes as text, also in attributes', async ({ page }) => {
+    const name = `x" data-injected="1' onmouseover='alert(1)`;
+    await mockStickers(page, [sticker(1, name, 'Hamburg', 'Deutschland', lastYear)]);
+    await page.goto('/stats');
+
+    const row = page.locator('#board_stickers .rank_row');
+
+    await expect(row.getByRole('link')).toHaveText(name);
+    await expect(row).toHaveAttribute('data-search', name.toLowerCase());
+    await expect(page.locator('[data-injected], [onmouseover]')).toHaveCount(0);
 });
 
 test('says when a Zeitraum has no stickers', async ({ page }) => {

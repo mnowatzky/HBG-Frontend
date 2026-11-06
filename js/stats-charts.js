@@ -34,12 +34,13 @@ function draw(id, description, option) {
         animation: !reducedMotion,
         aria: { enabled: true, label: { description } },
         textStyle: { fontFamily: 'Oswald, sans-serif', color: INK, fontSize: 13 },
+        ...option,
+        // After option, so that a chart's own tooltip adds to these instead of replacing them
         tooltip: {
             confine: true,
             textStyle: { fontFamily: 'Oswald, sans-serif', color: INK },
             ...option.tooltip,
         },
-        ...option,
     }, true);
 }
 
