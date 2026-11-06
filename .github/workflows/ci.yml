@@ -23,7 +23,7 @@ jobs:
       - run: docker run -d --name frontend -p 8080:80 hbg-frontend
       - name: Serve every page
         run: |
-          for path in karte sticker stats datenschutz 'bar_chart?data=names' js/api.js; do
+          for path in karte sticker stats datenschutz js/api.js js/stats.js js/stats-charts.js js/vendor/echarts/echarts.min.js; do
             curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 \
               --output /dev/null "http://localhost:8080/$path"
           done

@@ -3,14 +3,13 @@
 [![CI](https://github.com/mnowatzky/HBG-Frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/mnowatzky/HBG-Frontend/actions/workflows/ci.yml)
 [![Docker Hub](https://img.shields.io/docker/v/maltenow/hbg-frontend?sort=semver&label=docker%20hub)](https://hub.docker.com/r/maltenow/hbg-frontend)
 
-The pages of the HBG sticker map, in German: plain HTML, CSS and JavaScript with no build step, served by Apache. All data comes from [HBG-Fast-API](https://github.com/mnowatzky/HBG-Fast-API), which Apache makes available to the browser below `/api`.
+The pages of the HBG sticker map, in German: plain HTML, CSS and JavaScript with no build step, served by Apache. All data comes from [HBG-Fast-API](https://github.com/mnowatzky/HBG-Fast-API), which Apache makes available to the browser below `/api`. `/stats` needs HBG-Fast-API 1.0.0 or later.
 
 | Page | Purpose |
 | --- | --- |
 | `/karte` | Map of all stickers. `?name=Timo` shows only one person's. |
 | `/sticker` | Saves a sticker at the browser's current location. |
-| `/stats` | Totals and the change from last month: stickers, cities, countries and people. |
-| `/bar_chart?data=names` or `?data=countries` | Stickers per person or per country. |
+| `/stats` | Statistics for this month, this year or all time: totals, leaderboards with a link to each person's map, the farthest stickers from Norderstedt or the visitor, records, and charts of when and where. The old `/bar_chart?data=names` and `?data=countries` redirect to its sections. |
 | `/datenschutz` | The privacy policy. |
 
 `/` redirects to `/karte`.
@@ -53,7 +52,7 @@ npm test
 | Service | Used for |
 | --- | --- |
 | [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) and its geocoder | The map and its search on `/karte`. The token in `karte.html` is a public one (`pk.`), which every browser sees. When changing the version, update the `integrity` hashes next to it. |
-| [Chart.js](https://www.chartjs.org/) from jsDelivr | The charts on `/bar_chart`. |
+| [Apache ECharts](https://echarts.apache.org/) 6.1.0 | The charts on `/stats`, loaded only when they scroll near. Included in `js/vendor/echarts/` under the Apache License 2.0, with the licenses of the parts it bundles. To update it, copy `dist/echarts.min.js`, `LICENSE`, `NOTICE` and `licenses/LICENSE-d3` from the `echarts` npm package, and `LICENSE` from `zrender` as `LICENSE-zrender`. |
 | [SweetAlert2](https://sweetalert2.github.io/) | Dialogs on `/sticker`. Included in `js/` under the MIT License. |
 | [Oswald](https://github.com/googlefonts/OswaldFont) | The font of all pages. Included in `css/fonts/` under the SIL Open Font License. |
 

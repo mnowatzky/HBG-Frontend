@@ -10,7 +10,7 @@ RUN echo "Include conf/extra/hbg.conf" >> conf/httpd.conf
 RUN rm htdocs/index.html
 
 # Listed one by one so that local files like credentials.txt stay out of the image.
-COPY karte.html sticker.html stats.html bar_chart.html datenschutz.html robots.txt htdocs/
+COPY karte.html sticker.html stats.html datenschutz.html robots.txt htdocs/
 COPY css htdocs/css
 COPY js htdocs/js
 COPY bilder htdocs/bilder
