@@ -52,6 +52,7 @@ npm test
 
 | Service | Used for |
 | --- | --- |
+| [Cloudflare](https://www.cloudflare.com/) | Sits in front of the whole site in production: TLS and protection against attacks. It sees every request. NPM takes the visitor's address from its `CF-Connecting-IP` header. |
 | [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) and its geocoder | The map and its search on `/karte`. The token in `karte.html` is a public one (`pk.`), which every browser sees. When changing the version, update the `integrity` hashes next to it. |
 | [Chart.js](https://www.chartjs.org/) from jsDelivr | The charts on `/bar_chart`. |
 | [SweetAlert2](https://sweetalert2.github.io/) | Dialogs on `/sticker`. Included in `js/` under the MIT License. |
