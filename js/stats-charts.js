@@ -369,8 +369,12 @@ new ResizeObserver(([entry]) => {
     // Lays the months out again when the width changes, as when a phone turns.
     if (Math.abs(entry.contentRect.width - calendarWidth) < 1) return;
     calendarWidth = entry.contentRect.width;
-    if (state.period === 'monat') showThisMonth();
-    else if (dayCounts.length) showCalendar(document.getElementById('calendar_year').value);
+    // In the next frame: the layout sets the height, which within this callback would
+    // be a "ResizeObserver loop" error.
+    requestAnimationFrame(() => {
+        if (state.period === 'monat') showThisMonth();
+        else if (dayCounts.length) showCalendar(document.getElementById('calendar_year').value);
+    });
 }).observe(document.getElementById('calendar_chart'));
 
 // ---- Loading

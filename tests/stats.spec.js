@@ -89,12 +89,12 @@ test.describe('with a few stickers', () => {
         for (const link of await bar.getByRole('link').all()) await expect(link).toBeInViewport({ ratio: 1 });
     });
 
-    test('lays out the totals two by two on phones and in one row on wide screens', async ({ page }, testInfo) => {
+    test('lays out the totals two by two on phones and in one row on wide screens', async ({ page }) => {
         await expect(page.locator('#stickercount')).toHaveText('6');
 
         const tops = await page.locator('.card').evaluateAll(cards => cards.map(card => Math.round(card.getBoundingClientRect().top)));
 
-        expect(new Set(tops).size).toBe(testInfo.project.name === 'mobile' ? 2 : 1);
+        expect(new Set(tops).size).toBe(page.viewportSize().width < 768 ? 2 : 1);
     });
 
     test('shows no change before a month is chosen', async ({ page }) => {
@@ -210,6 +210,23 @@ test.describe('with a few stickers', () => {
         await expect(page.locator('.year_pick')).toBeVisible();
     });
 
+    test('lays out the charts again when the phone turns, without errors', async ({ page }) => {
+        const errors = [];
+        page.on('pageerror', error => errors.push(error.message));
+        await page.locator('#wann').scrollIntoViewIfNeeded();
+        await expect(page.locator('#calendar_chart svg')).toBeVisible();
+
+        for (const size of [{ width: 700, height: 375 }, { width: 1024, height: 768 }, { width: 360, height: 640 }]) {
+            await page.setViewportSize(size);
+            await expect.poll(async () => {
+                const [svg, box] = await Promise.all([page.locator('#calendar_chart svg').boundingBox(), page.locator('#calendar_chart').boundingBox()]);
+                return Math.round(svg.width - box.width);
+            }).toBe(0);
+        }
+
+        expect(errors).toEqual([]);
+    });
+
     test('has no accessibility violations with everything loaded', async ({ page }) => {
         await page.locator('#wo').scrollIntoViewIfNeeded();
         await expect(page.locator('#calendar_chart svg')).toBeVisible();
@@ -294,18 +311,56 @@ test.describe('from where I am', () => {
     });
 });
 
-test.describe('without the location', () => {
-    test.use({ permissions: [] });
+// Answers for the browser's location only when the test says so, the same in every browser
+async function holdLocation(page) {
+    await page.addInitScript(() => {
+        window.locationAnswers = [];
+        navigator.geolocation.getCurrentPosition = (success, error) => window.locationAnswers.push({ success, error });
+    });
+}
 
-    test('stays with Norderstedt and says why', async ({ page, context }) => {
-        await context.clearPermissions();
+function answerLocation(page, answer) {
+    return page.evaluate(answer => {
+        const { success, error } = window.locationAnswers.shift();
+        if (answer.denied) error({ code: 1, message: 'denied' });
+        else success({ coords: answer });
+    }, answer);
+}
+
+test.describe('without the location', () => {
+    test.beforeEach(async ({ page }) => {
+        await holdLocation(page);
         await mockStickers(page, stickers);
         await page.goto('/stats');
+        await expect(page.locator('#farthest_sticker')).toContainText('Wien');
+    });
 
+    test('stays with Norderstedt and says why', async ({ page }) => {
         await chip(page, 'von mir').click();
+        await expect(page.locator('#origin_status')).toHaveText('Standort wird ermittelt …');
+
+        await answerLocation(page, { denied: true });
 
         await expect(page.locator('#origin_status')).toHaveText(/gemessen wird von Norderstedt/);
         await expect(page.getByRole('radio', { name: 'von Norderstedt' })).toBeChecked();
+    });
+
+    test('drops a location that comes after going back to Norderstedt', async ({ page }) => {
+        const mine = [];
+        page.on('request', request => {
+            const params = new URL(request.url()).searchParams;
+            if (params.has('latitude') && params.get('latitude') !== String(HOME.latitude)) mine.push(request.url());
+        });
+        await chip(page, 'von mir').click();
+        await chip(page, 'von Norderstedt').click();
+
+        // Munich, from where Copenhagen would be the farthest
+        await answerLocation(page, { latitude: 48.1372, longitude: 11.5761 });
+
+        await expect(page.getByRole('radio', { name: 'von Norderstedt' })).toBeChecked();
+        await expect(page.locator('#origin_status')).toHaveText('');
+        await expect(page.locator('#farthest_sticker')).toContainText('Wien');
+        expect(mine).toEqual([]);
     });
 });
 

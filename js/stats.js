@@ -327,18 +327,27 @@ function roughly(degrees) {
     return Math.round(degrees * 100) / 100;
 }
 
+// Counts the taps on the origin chips, so that a location that comes after the
+// visitor went back to Norderstedt is dropped.
+let originChoice = 0;
+
 async function measureFrom(origin) {
     const status = document.getElementById('origin_status');
+    const choice = ++originChoice;
     if (origin === 'home') {
         state.origin = HOME;
         status.textContent = '';
     } else {
+        // Until the browser asks, and the visitor answers. Firefox doesn't answer at
+        // all when its question is closed, so tapping "von Norderstedt" ends the wait.
         status.textContent = 'Standort wird ermittelt …';
         try {
             const { coords } = await currentPosition();
+            if (choice !== originChoice) return;
             state.origin = { latitude: roughly(coords.latitude), longitude: roughly(coords.longitude) };
             status.textContent = 'Gemessen von deinem Standort, auf etwa einen Kilometer gerundet.';
         } catch (error) {
+            if (choice !== originChoice) return;
             state.origin = HOME;
             document.querySelector('input[name=origin][value=home]').checked = true;
             status.textContent = error.code === 1
