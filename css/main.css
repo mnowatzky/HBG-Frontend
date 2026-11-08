@@ -145,8 +145,8 @@ a:active {
     container-type: inline-size;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    /* The change from last month shows only for a month, when the number is small,
-       so it fits next to it. */
+    /* The change from the month or year before shows only then, when the number
+       is small enough to fit next to it. */
     grid-template-areas:
         "frame frame"
         "number diff"
@@ -165,10 +165,10 @@ a:active {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+    /* The same edges as the sections below: 1100px inside the padding */
     max-width: 1100px;
     margin: 16px auto;
     padding: 0 16px;
-    box-sizing: border-box;
 }
 
 .card .time_frame {
@@ -196,6 +196,11 @@ a:active {
     /* "2740" is about 1.8 times as wide as the font is tall. */
     font-size: clamp(40px, 40cqi, 96px);
     line-height: 1;
+}
+
+/* Next to a change, a year's three digits share the width with the pill. */
+.card:has(.diff:not([hidden])) .stat_int {
+    font-size: clamp(32px, 30cqi, 96px);
 }
 
 .stat_desc {
@@ -397,6 +402,11 @@ a:active {
     margin: 32px auto;
     padding: 0 16px;
     /* Below the sticky bar after a jump */
+    scroll-margin-top: 64px;
+}
+
+/* The cards at the top jump to a chart too */
+.chart_box {
     scroll-margin-top: 64px;
 }
 
@@ -603,7 +613,13 @@ a:active {
     grid-column: 1 / -1;
 }
 
-/* Fixed heights, so that nothing below moves when the charts arrive */
+/* "Diagramme laden …" comes and goes in a line of its own, so nothing below moves. */
+#charts_status {
+    min-height: 1lh;
+}
+
+/* Fixed heights, so that nothing below moves when the charts arrive. stats.js sets
+   the calendar's from its width. */
 .chart {
     height: 260px;
 }
@@ -690,7 +706,7 @@ a:active {
     }
 
     /* Below the two rows after a jump */
-    .stats_section {
+    .stats_section, .chart_box {
         scroll-margin-top: 104px;
     }
 }

@@ -123,6 +123,7 @@ function setBusy(busy) {
 // Everything that the chips change
 async function loadPeriod() {
     const filters = periodDays(state.period);
+    layoutCharts();
     setBusy(true);
     const parts = [loadCards(filters), loadPeople(filters), loadPairs(filters), loadRecords(filters), loadPlaces(filters)];
     if (state.chartsShown && typeof loadCharts === 'function') parts.push(loadCharts(filters));
@@ -156,38 +157,67 @@ function pluralizeDesc(descIdx, count) {
 
 const ARROWS = { up: 'M12 19V5M6 11l6-6 6 6', down: 'M12 5v14M6 13l6 6 6-6' };
 
-// The change from last month on a card, as a pill with an arrow, or nothing with
-// diff null. Screen readers get it as a sentence.
-function setDiff(id, diff) {
+// The change from the Zeitraum before on a card, as a pill with an arrow, or nothing
+// with diff null. before names that Zeitraum for the sentence screen readers get,
+// like "im Oktober".
+function setDiff(id, diff, before) {
     const element = document.getElementById(id);
     element.hidden = diff === null;
     if (diff === null) return;
 
-    const now = new Date();
-    const before = monthFormat.format(new Date(now.getFullYear(), now.getMonth() - 1, 1));
     const amount = formatNumber(Math.abs(diff));
     const direction = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
     const icon = direction === 'same' ? '' : `<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none"
         stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${ARROWS[direction]}"/></svg>`;
-    const sentence = { up: `${amount} mehr als im ${before}`, down: `${amount} weniger als im ${before}`, same: `so viele wie im ${before}` }[direction];
+    const sentence = { up: `${amount} mehr als ${before}`, down: `${amount} weniger als ${before}`, same: `so viele wie ${before}` }[direction];
     element.className = `diff diff_${direction}`;
     element.innerHTML = `${icon}<span aria-hidden="true">${direction === 'same' ? '±0' : amount}</span>`
         + `<span class="visually_hidden">${sentence}</span>`;
 }
 
+// The same day last year, or the last day of February for the 29th
+function sameDayLastYear(now) {
+    const year = now.getFullYear() - 1;
+    const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+    return new Date(year, now.getMonth(), Math.min(now.getDate(), lastDay));
+}
+
+// What a month or year compares with: the whole month before, or last year up to
+// the same date, as the year so far is only part of one. name finishes the
+// sentence for screen readers, like "im Oktober" or "bis zum 8. November 2025".
+// Insgesamt compares with nothing.
+function previousPeriod(period, now = new Date()) {
+    if (period === 'monat') {
+        return { filters: periodDays(period, -1, now), name: periodName(period, new Date(now.getFullYear(), now.getMonth() - 1, 1)) };
+    }
+    if (period === 'jahr') {
+        const sameDay = sameDayLastYear(now);
+        return {
+            filters: {
+                since_day: `${sameDay.getFullYear()}-01-01`,
+                until_day: isoDay(new Date(sameDay.getFullYear(), sameDay.getMonth(), sameDay.getDate() + 1)),
+            },
+            name: `bis zum ${sameDay.getDate()}. ${monthFormat.format(sameDay)} ${sameDay.getFullYear()}`,
+        };
+    }
+    return null;
+}
+
 function loadCards(filters) {
-    const monthly = state.period === 'monat';
+    const period = state.period;
+    const previous = previousPeriod(period);
+    document.getElementById('sticker_card').setAttribute('href', period === 'monat' ? '#kalender' : '#summe');
     return update('cards', () => Promise.all([
         fetchStats('/summary', filters),
-        monthly ? fetchStats('/summary', periodDays('monat', -1)) : null,
+        previous ? fetchStats('/summary', previous.filters) : null,
     ]), ([summary, before]) => {
-        document.querySelectorAll('.time_frame').forEach(element => element.innerText = periodName(state.period));
+        document.querySelectorAll('.time_frame').forEach(element => element.innerText = periodName(period));
         showSummary(summary);
         const change = key => before ? summary[key] - before[key] : null;
-        setDiff('total_diff', change('stickers'));
-        setDiff('city_diff', change('cities'));
-        setDiff('country_diff', change('countries'));
-        setDiff('name_diff', change('people'));
+        setDiff('total_diff', change('stickers'), previous?.name);
+        setDiff('city_diff', change('cities'), previous?.name);
+        setDiff('country_diff', change('countries'), previous?.name);
+        setDiff('name_diff', change('people'), previous?.name);
     });
 }
 
@@ -492,6 +522,40 @@ function loadScript(src) {
     });
 }
 
+// The calendar's layout for its width: the year as months of up to six weeks, three,
+// four or six a row, or this month as one large calendar. stats-charts.js draws by
+// it, and layoutCharts() sizes the calendar by it before the charts arrive.
+function calendarLayout(width, monthly, now = new Date()) {
+    if (monthly) {
+        const cell = Math.max(28, Math.min(56, Math.floor((width - 16) / 7)));
+        // Monday first
+        const offset = (new Date(now.getFullYear(), now.getMonth(), 1).getDay() + 6) % 7;
+        const length = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const top = 30;
+        return { cell, top, height: top + Math.ceil((offset + length) / 7) * cell + 56 };
+    }
+    // Three months a row on phones, four on tablets, six on wide screens
+    const columns = width >= 900 ? 6 : width >= 520 ? 4 : 3;
+    const slot = width / columns;
+    // A month is up to six weeks wide and seven days tall.
+    const cell = Math.max(8, Math.min(20, Math.floor((slot - 10) / 6)));
+    const rowHeight = cell * 7 + 34;
+    const legendHeight = 40;
+    return { columns, slot, cell, rowHeight, height: Math.ceil(12 / columns) * rowHeight + legendHeight };
+}
+
+// The charts take their final space before they arrive, so that a jump past them,
+// as to "Wo", still ends in the right place once they do. A month has no months to
+// chart, and its calendar is one month.
+function layoutCharts() {
+    const monthly = state.period === 'monat';
+    for (const id of ['month_chart', 'total_chart']) {
+        document.getElementById(id).closest('.chart_box').hidden = monthly;
+    }
+    const calendar = document.getElementById('calendar_chart');
+    calendar.style.height = `${calendarLayout(calendar.clientWidth, monthly).height}px`;
+}
+
 let chartScripts;
 
 async function showCharts() {
@@ -577,5 +641,7 @@ document.querySelector('input[name=origin][value=home]').checked = true;
 loadPeriod();
 loadAlways();
 watchCharts();
+// Before the charts arrive, which then lay themselves out again
+addEventListener('resize', () => state.chartsShown || layoutCharts());
 watchScrolling();
 watchSections();

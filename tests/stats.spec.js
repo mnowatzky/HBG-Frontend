@@ -68,6 +68,51 @@ test.describe('with a few stickers', () => {
         await expect(rows(page, 'board_stickers')).toHaveText([/Timo\s*2/, /Lena\s*1/]);
     });
 
+    test('lead from each total to where it comes from', async ({ page }) => {
+        await expect(page.locator('#stickercount')).toHaveText('6');
+        const cards = page.locator('#cards .card');
+
+        await expect(cards).toHaveCount(4);
+        expect(await cards.evaluateAll(links => links.map(link => link.hash))).toEqual(['#summe', '#wo', '#wo', '#ranglisten']);
+
+        await cards.first().click();
+
+        // The whole chart below the sticky bar, with its title
+        await expect(page.locator('#total_chart svg')).toBeVisible();
+        const bar = await page.locator('.stats_bar').boundingBox();
+        const title = await page.locator('#summe h3').boundingBox();
+        expect(title.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+        await expect(page.locator('#summe h3')).toBeInViewport();
+
+        // A month has no sum, so its card leads to the calendar.
+        await chip(page, 'Monat').click();
+
+        await expect(cards.first()).toHaveAttribute('href', '#kalender');
+    });
+
+    test('keeps a jump past the charts in place when they arrive', async ({ page }) => {
+        await expect(page.locator('#stickercount')).toHaveText('6');
+
+        await page.locator('#cards .card').nth(1).click();
+
+        await expect(page.locator('#calendar_chart svg')).toBeVisible();
+        await expect(page.locator('#charts_status')).toBeEmpty();
+        const bar = await page.locator('.stats_bar').boundingBox();
+        const title = await page.locator('#wo_title').boundingBox();
+        expect(title.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+        await expect(page.locator('#wo_title')).toBeInViewport();
+    });
+
+    test('lines the totals up with the sections below', async ({ page }) => {
+        await expect(page.locator('#stickercount')).toHaveText('6');
+
+        const box = locator => locator.evaluate(element => element.getBoundingClientRect().toJSON());
+        const tiles = await box(page.locator('.tiles').first());
+
+        expect(Math.round((await box(page.locator('.card').first())).left)).toBe(Math.round(tiles.left));
+        expect(Math.round((await box(page.locator('.card').last())).right)).toBe(Math.round(tiles.right));
+    });
+
     test('asks for a Zeitraum by the local days', async ({ page }) => {
         const request = page.waitForRequest(request => new URL(request.url()).pathname === '/api/stats/people'
             && new URL(request.url()).searchParams.has('since_day'));
@@ -257,6 +302,56 @@ test.describe('with a few stickers', () => {
             .analyze();
 
         expect(results.violations.map(v => `${v.id}: ${v.nodes.map(n => n.target).join(', ')}`)).toEqual([]);
+    });
+});
+
+test.describe('in the year view', () => {
+    // 15 June 2026 in Berlin
+    const today = new Date('2026-06-15T12:00:00+02:00');
+    const yearStickers = [
+        sticker(1, 'Timo', 'Hamburg', 'Deutschland', new Date('2026-03-01T12:00:00+01:00')),
+        sticker(2, 'Lena', 'Wien', 'Österreich', new Date('2026-06-15T10:00:00+02:00')),
+        sticker(3, 'Timo', 'Hamburg', 'Deutschland', new Date('2025-06-15T20:00:00+02:00')),
+        // After 15 June last year, so not part of the comparison
+        sticker(4, 'Malte', 'Berlin', 'Deutschland', new Date('2025-06-16T09:00:00+02:00')),
+        sticker(5, 'Ana', 'Kopenhagen', 'Dänemark', new Date('2025-09-01T12:00:00+02:00')),
+    ];
+
+    test('compares with last year up to the same day', async ({ page }) => {
+        await page.clock.setFixedTime(today);
+        await mockStickers(page, yearStickers);
+        await page.goto('/stats');
+        const request = page.waitForRequest(request => new URL(request.url()).pathname === '/api/stats/summary'
+            && new URL(request.url()).searchParams.get('since_day') === '2025-01-01');
+
+        await chip(page, 'Jahr').click();
+
+        expect(new URL((await request).url()).searchParams.get('until_day')).toBe('2025-06-16');
+        await expect(page.locator('#stickercount')).toHaveText('2');
+        await expect(page.locator('#total_diff [aria-hidden="true"]:not(svg)')).toHaveText('1');
+        await expect(page.locator('#total_diff .visually_hidden')).toHaveText('1 mehr als bis zum 15. Juni 2025');
+        await expect(page.locator('#total_diff')).toHaveClass(/diff_up/);
+        // Hamburg and Wien against Hamburg, Germany and Austria against Germany
+        await expect(page.locator('#city_diff')).toContainText('1 mehr als');
+        await expect(page.locator('#country_diff')).toContainText('1 mehr als');
+        await expect(page.locator('#name_diff')).toContainText('1 mehr als');
+
+        await chip(page, 'Insgesamt').click();
+
+        for (const diff of await page.locator('.diff').all()) await expect(diff).toBeHidden();
+    });
+
+    test('stops at the end of February for the 29th', async ({ page }) => {
+        await page.clock.setFixedTime(new Date('2028-02-29T12:00:00+01:00'));
+        await mockStickers(page, yearStickers);
+        await page.goto('/stats');
+        const request = page.waitForRequest(request => new URL(request.url()).pathname === '/api/stats/summary'
+            && new URL(request.url()).searchParams.get('since_day') === '2027-01-01');
+
+        await chip(page, 'Jahr').click();
+
+        expect(new URL((await request).url()).searchParams.get('until_day')).toBe('2027-03-01');
+        await expect(page.locator('#total_diff .visually_hidden')).toContainText('bis zum 28. Februar 2027');
     });
 });
 
