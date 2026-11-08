@@ -171,6 +171,8 @@ function monthName(key, short = false) {
 function showMonths(counts) {
     // A month is a single bar, so the month view leaves these charts out.
     if (state.period === 'monat') return;
+    // The sum starts with the period, so the caption says where it starts
+    document.getElementById('total_desc').textContent = `${state.period === 'jahr' ? 'Seit Jahresbeginn' : 'Seit dem ersten Sticker'}, Monat für Monat`;
     const months = everyMonth(counts);
     table('month_table', ['Monat', 'Sticker'], months.map(([key, count]) => [monthName(key), count]).reverse());
     if (!months.length) {

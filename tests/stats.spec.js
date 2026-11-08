@@ -207,7 +207,12 @@ test.describe('with a few stickers', () => {
 
         await expect(page.locator('#month_chart svg')).toBeVisible();
         await expect(page.locator('#total_chart svg')).toBeVisible();
+        await expect(page.locator('#total_desc')).toHaveText('Seit Jahresbeginn, Monat für Monat');
         await expect(page.locator('.year_pick')).toBeVisible();
+
+        await chip(page, 'Insgesamt').click();
+
+        await expect(page.locator('#total_desc')).toHaveText('Seit dem ersten Sticker, Monat für Monat');
     });
 
     test('labels the months without the year when a year is picked', async ({ page }) => {
