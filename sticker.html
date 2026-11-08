@@ -31,6 +31,49 @@
 
     <script>
         const MAX_NAME_LENGTH = 75;
+        // A position this old still puts the sticker about where the person is now
+        const MAX_POSITION_AGE = 10000;
+        const LOCATION_OPTIONS = {maximumAge: MAX_POSITION_AGE, timeout: 15000, enableHighAccuracy: true};
+
+        // While the page is open, it keeps the latest position, so saving needn't wait for GPS.
+        // Only once the location is allowed: the page never asks for it before the click.
+        let latestPosition = null;
+        let watchId = null;
+
+        function watchLocation() {
+            if (watchId !== null || !navigator.geolocation) return;
+            watchId = navigator.geolocation.watchPosition(
+                position => { latestPosition = position; },
+                stopWatching,
+                LOCATION_OPTIONS
+            );
+        }
+
+        function stopWatching() {
+            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+            latestPosition = null;
+        }
+
+        async function watchIfAllowed() {
+            try {
+                const permission = await navigator.permissions.query({name: 'geolocation'});
+                if (permission.state === 'granted') watchLocation();
+            } catch {
+                // Without the Permissions API, the click gets the position
+            }
+        }
+
+        function recentPosition() {
+            const fresh = latestPosition && Date.now() - latestPosition.timestamp <= MAX_POSITION_AGE;
+            return fresh ? latestPosition : null;
+        }
+
+        // A hidden page needs no position, and saves the battery
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopWatching(); else watchIfAllowed();
+        });
+        watchIfAllowed();
 
         function showError(msg) {
             Swal.fire({
@@ -79,9 +122,16 @@
                 //get location
                 if (navigator.geolocation) {
                     showLoading();
-                    // A fresh position, so the sticker is where the person is now
-                    const locationOptions = {maximumAge: 0, timeout: 15000, enableHighAccuracy: true};
-                    navigator.geolocation.getCurrentPosition(savePosition, locationError, locationOptions);
+                    const position = recentPosition();
+                    if (position) {
+                        savePosition(position);
+                    } else {
+                        navigator.geolocation.getCurrentPosition(position => {
+                            // Allowed now, so the next sticker needn't wait
+                            watchLocation();
+                            savePosition(position);
+                        }, locationError, LOCATION_OPTIONS);
+                    }
                 } else {
                     showError('Standort kann nicht ermittelt werden');
                 }
