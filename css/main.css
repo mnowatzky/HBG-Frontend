@@ -405,6 +405,11 @@ a:active {
     scroll-margin-top: 64px;
 }
 
+/* The cards at the top jump to a chart too */
+.chart_box {
+    scroll-margin-top: 64px;
+}
+
 .section_title {
     font-size: 1.8em;
     margin: 0 0 12px;
@@ -608,7 +613,13 @@ a:active {
     grid-column: 1 / -1;
 }
 
-/* Fixed heights, so that nothing below moves when the charts arrive */
+/* "Diagramme laden …" comes and goes in a line of its own, so nothing below moves. */
+#charts_status {
+    min-height: 1lh;
+}
+
+/* Fixed heights, so that nothing below moves when the charts arrive. stats.js sets
+   the calendar's from its width. */
 .chart {
     height: 260px;
 }
@@ -695,7 +706,7 @@ a:active {
     }
 
     /* Below the two rows after a jump */
-    .stats_section {
+    .stats_section, .chart_box {
         scroll-margin-top: 104px;
     }
 }

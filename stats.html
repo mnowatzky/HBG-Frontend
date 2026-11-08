@@ -53,18 +53,19 @@
 </div>
 
 <div id="cards">
-    <div class="card">
+    <!-- To the chart of the sum, or the calendar for a month, which has no sum -->
+    <a class="card" id="sticker_card" href="#summe">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="stickercount" class="stat_int"></p>
         <p id="total_diff" class="diff" hidden></p>
         <p class="stat_desc" id="sticker_desc">geklebte Sticker</p>
-    </div>
-    <div class="card">
+    </a>
+    <a class="card" href="#wo">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="citycount" class="stat_int"></p>
         <p id="city_diff" class="diff" hidden></p>
         <p class="stat_desc" id="city_desc">beklebte Städte</p>
-    </div>
+    </a>
     <a class="card" href="#wo">
         <p class="stat_desc time_frame">Insgesamt</p>
         <p id="countrycount" class="stat_int"></p>
@@ -222,11 +223,11 @@
             <div class="chart" id="month_chart"></div>
             <details class="chart_table"><summary>Als Tabelle</summary><section id="month_table" tabindex="0" aria-label="Sticker pro Monat als Tabelle"></section></details>
         </figure>
-        <figure class="chart_box chart_wide">
+        <figure class="chart_box chart_wide" id="summe">
             <figcaption><h3>Sticker insgesamt</h3><p class="board_desc" id="total_desc">Zusammengezählt, Monat für Monat</p></figcaption>
             <div class="chart" id="total_chart"></div>
         </figure>
-        <figure class="chart_box chart_wide">
+        <figure class="chart_box chart_wide" id="kalender">
             <figcaption>
                 <h3>Kalender</h3>
                 <p class="board_desc" id="calendar_desc">Sticker an jedem Tag des Jahres</p>

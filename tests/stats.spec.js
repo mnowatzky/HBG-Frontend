@@ -68,6 +68,41 @@ test.describe('with a few stickers', () => {
         await expect(rows(page, 'board_stickers')).toHaveText([/Timo\s*2/, /Lena\s*1/]);
     });
 
+    test('lead from each total to where it comes from', async ({ page }) => {
+        await expect(page.locator('#stickercount')).toHaveText('6');
+        const cards = page.locator('#cards .card');
+
+        await expect(cards).toHaveCount(4);
+        expect(await cards.evaluateAll(links => links.map(link => link.hash))).toEqual(['#summe', '#wo', '#wo', '#ranglisten']);
+
+        await cards.first().click();
+
+        // The whole chart below the sticky bar, with its title
+        await expect(page.locator('#total_chart svg')).toBeVisible();
+        const bar = await page.locator('.stats_bar').boundingBox();
+        const title = await page.locator('#summe h3').boundingBox();
+        expect(title.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+        await expect(page.locator('#summe h3')).toBeInViewport();
+
+        // A month has no sum, so its card leads to the calendar.
+        await chip(page, 'Monat').click();
+
+        await expect(cards.first()).toHaveAttribute('href', '#kalender');
+    });
+
+    test('keeps a jump past the charts in place when they arrive', async ({ page }) => {
+        await expect(page.locator('#stickercount')).toHaveText('6');
+
+        await page.locator('#cards .card').nth(1).click();
+
+        await expect(page.locator('#calendar_chart svg')).toBeVisible();
+        await expect(page.locator('#charts_status')).toBeEmpty();
+        const bar = await page.locator('.stats_bar').boundingBox();
+        const title = await page.locator('#wo_title').boundingBox();
+        expect(title.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+        await expect(page.locator('#wo_title')).toBeInViewport();
+    });
+
     test('lines the totals up with the sections below', async ({ page }) => {
         await expect(page.locator('#stickercount')).toHaveText('6');
 

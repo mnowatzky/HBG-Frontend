@@ -123,6 +123,7 @@ function setBusy(busy) {
 // Everything that the chips change
 async function loadPeriod() {
     const filters = periodDays(state.period);
+    layoutCharts();
     setBusy(true);
     const parts = [loadCards(filters), loadPeople(filters), loadPairs(filters), loadRecords(filters), loadPlaces(filters)];
     if (state.chartsShown && typeof loadCharts === 'function') parts.push(loadCharts(filters));
@@ -205,6 +206,7 @@ function previousPeriod(period, now = new Date()) {
 function loadCards(filters) {
     const period = state.period;
     const previous = previousPeriod(period);
+    document.getElementById('sticker_card').setAttribute('href', period === 'monat' ? '#kalender' : '#summe');
     return update('cards', () => Promise.all([
         fetchStats('/summary', filters),
         previous ? fetchStats('/summary', previous.filters) : null,
@@ -520,6 +522,40 @@ function loadScript(src) {
     });
 }
 
+// The calendar's layout for its width: the year as months of up to six weeks, three,
+// four or six a row, or this month as one large calendar. stats-charts.js draws by
+// it, and layoutCharts() sizes the calendar by it before the charts arrive.
+function calendarLayout(width, monthly, now = new Date()) {
+    if (monthly) {
+        const cell = Math.max(28, Math.min(56, Math.floor((width - 16) / 7)));
+        // Monday first
+        const offset = (new Date(now.getFullYear(), now.getMonth(), 1).getDay() + 6) % 7;
+        const length = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const top = 30;
+        return { cell, top, height: top + Math.ceil((offset + length) / 7) * cell + 56 };
+    }
+    // Three months a row on phones, four on tablets, six on wide screens
+    const columns = width >= 900 ? 6 : width >= 520 ? 4 : 3;
+    const slot = width / columns;
+    // A month is up to six weeks wide and seven days tall.
+    const cell = Math.max(8, Math.min(20, Math.floor((slot - 10) / 6)));
+    const rowHeight = cell * 7 + 34;
+    const legendHeight = 40;
+    return { columns, slot, cell, rowHeight, height: Math.ceil(12 / columns) * rowHeight + legendHeight };
+}
+
+// The charts take their final space before they arrive, so that a jump past them,
+// as to "Wo", still ends in the right place once they do. A month has no months to
+// chart, and its calendar is one month.
+function layoutCharts() {
+    const monthly = state.period === 'monat';
+    for (const id of ['month_chart', 'total_chart']) {
+        document.getElementById(id).closest('.chart_box').hidden = monthly;
+    }
+    const calendar = document.getElementById('calendar_chart');
+    calendar.style.height = `${calendarLayout(calendar.clientWidth, monthly).height}px`;
+}
+
 let chartScripts;
 
 async function showCharts() {
@@ -605,5 +641,7 @@ document.querySelector('input[name=origin][value=home]').checked = true;
 loadPeriod();
 loadAlways();
 watchCharts();
+// Before the charts arrive, which then lay themselves out again
+addEventListener('resize', () => state.chartsShown || layoutCharts());
 watchScrolling();
 watchSections();

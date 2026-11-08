@@ -260,22 +260,11 @@ function showCalendar(year) {
     const element = document.getElementById('calendar_chart');
     const days = dayCounts.filter(count => count.key.startsWith(`${year}-`)).map(count => [count.key, count.count]);
     table('calendar_table', ['Tag', 'Sticker'], days.map(([day, count]) => [dateFormat.format(parseDay(day)), count]));
-    if (!days.length) {
-        element.style.height = '';
-        chartIn('calendar_chart').resize();
-        return drawEmpty('calendar_chart');
-    }
-
-    // Three months a row on phones, four on tablets, six on wide screens
-    const width = element.clientWidth;
-    const columns = width >= 900 ? 6 : width >= 520 ? 4 : 3;
-    const slot = width / columns;
-    // A month is up to six weeks wide and seven days tall.
-    const cell = Math.max(8, Math.min(20, Math.floor((slot - 10) / 6)));
-    const rowHeight = cell * 7 + 34;
-    const legendHeight = 40;
-    element.style.height = `${Math.ceil(12 / columns) * rowHeight + legendHeight}px`;
+    const { columns, slot, cell, rowHeight, height } = calendarLayout(element.clientWidth, false);
+    element.style.height = `${height}px`;
     chartIn('calendar_chart').resize();
+    if (!days.length) return drawEmpty('calendar_chart');
+
 
     const calendars = MONTHS.map((_, month) => ({
         range: `${year}-${String(month + 1).padStart(2, '0')}`,
@@ -329,12 +318,8 @@ function showThisMonth() {
     table('calendar_table', ['Tag', 'Sticker'], stickered.map(([day, count]) => [dateFormat.format(parseDay(day)), count]));
 
     const width = element.clientWidth;
-    const cell = Math.max(28, Math.min(56, Math.floor((width - 16) / 7)));
-    // Monday first
-    const offset = (new Date(year, month, 1).getDay() + 6) % 7;
-    const weeks = Math.ceil((offset + length) / 7);
-    const top = 30;
-    element.style.height = `${top + weeks * cell + 56}px`;
+    const { cell, top, height } = calendarLayout(width, true, now);
+    element.style.height = `${height}px`;
     chartIn('calendar_chart').resize();
 
     const busiest = stickered.reduce((a, b) => (b[1] > a[1] ? b : a), stickered[0]);
@@ -388,9 +373,6 @@ new ResizeObserver(([entry]) => {
 function loadCharts(filters) {
     const counts = by => () => fetchStats('/counts', { ...filters, by });
     const monthly = state.period === 'monat';
-    for (const id of ['month_chart', 'total_chart']) {
-        document.getElementById(id).closest('.chart_box').hidden = monthly;
-    }
     return Promise.all([
         update('hours', counts('hour'), showHours),
         update('weekdays', counts('weekday'), showWeekdays),
