@@ -29,8 +29,11 @@ function plural(count, one, many) {
     return `${formatNumber(count)} ${count === 1 ? one : many}`;
 }
 
-// Whole km, with one decimal below 10 km: "17.992 km", "4,8 km"
+// Whole km, with one decimal below 10 km and in metres below 1 km: "17.992 km",
+// "4,8 km", "300 m"
 function formatKm(km) {
+    const metres = Math.round(km * 1000);
+    if (metres < 1000) return `${formatNumber(metres)} m`;
     const digits = km < 10 ? 1 : 0;
     const format = new Intl.NumberFormat('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits });
     return `${format.format(km)} km`;
