@@ -479,6 +479,17 @@ test.describe('without the location', () => {
     });
 });
 
+test('shows distances below 1 km in metres', async ({ page }) => {
+    await mockStickers(page, [
+        // About 300 m apart
+        sticker(2, 'Timo', 'Hamburg', 'Deutschland', thisMonth, 53.5527, 9.99),
+        sticker(1, 'Lena', 'Hamburg', 'Deutschland', lastMonth),
+    ]);
+    await page.goto('/stats');
+
+    await expect(page.locator('#latest')).toContainText('300 m vom vorletzten Sticker');
+});
+
 test('shows names with quotes as text, also in attributes', async ({ page }) => {
     const name = `x" data-injected="1' onmouseover='alert(1)`;
     await mockStickers(page, [sticker(1, name, 'Hamburg', 'Deutschland', lastYear)]);
