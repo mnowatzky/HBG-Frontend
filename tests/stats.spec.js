@@ -204,6 +204,24 @@ test.describe('with a few stickers', () => {
         await expect(page.locator('#newcomer')).toContainText('Lena');
     });
 
+    test('finds the stickers farthest from their nearest, in the Zeitraum', async ({ page }) => {
+        const isolated = rows(page, 'board_isolated');
+        await expect(page.locator('#weiteste #board_isolated')).toContainText('Die Sticker am weitesten weg von allen anderen');
+        // Vienna's nearest is Berlin, the two in Hamburg are 0 m apart.
+        await expect(isolated).toHaveCount(5);
+        await expect(isolated.first()).toContainText(/Platz 1\s*Wien, Österreich\s*von Timo, nächster in Berlin, Deutschland\s*5\d\d km/);
+        await expect(isolated.last()).toContainText(/Hamburg, Deutschland.*nächster in Hamburg, Deutschland\s*0 m/);
+
+        await chip(page, 'Monat').click();
+
+        // Hamburg and Vienna alone, each the other's nearest
+        await expect(isolated).toHaveCount(2);
+        await expect(isolated.nth(0)).toContainText(/Platz 1\s*Hamburg, Deutschland\s*von Timo & Lena, nächster in Wien/);
+        await expect(isolated.nth(1)).toContainText(/Platz 1\s*Wien, Österreich\s*von Timo, nächster in Hamburg/);
+        const [first, second] = await isolated.locator('.rank_value').allTextContents();
+        expect(first).toBe(second);
+    });
+
     test('loads the charts only when they come near', async ({ page }) => {
         const charts = [];
         page.on('request', request => {
@@ -506,10 +524,13 @@ test('says when a Zeitraum has no stickers', async ({ page }) => {
     await mockStickers(page, [sticker(1, 'Jonas', 'Bremen', 'Deutschland', lastYear, 53.08, 8.80)]);
     await page.goto('/stats');
     await expect(page.locator('#stickercount')).toHaveText('1');
+    // One sticker has no nearest.
+    await expect(page.locator('#board_isolated .empty')).toHaveText('Noch keine zwei Sticker in diesem Zeitraum');
 
     await chip(page, 'Monat').click();
 
     await expect(page.locator('#board_stickers .empty')).toHaveText('Noch keine Sticker in diesem Zeitraum');
+    await expect(page.locator('#board_isolated .empty')).toHaveText('Noch keine zwei Sticker in diesem Zeitraum');
     await expect(page.locator('#record_day')).toHaveText('Noch keine Sticker in diesem Zeitraum');
     await expect(page.locator('#king')).toHaveText(/ noch kein Sticker$/);
 });

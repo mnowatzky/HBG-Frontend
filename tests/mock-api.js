@@ -173,6 +173,17 @@ function latest(stickers) {
     };
 }
 
+// Each sticker with the distance to its nearest other one, farthest first, all
+// against all, which is plenty for tests
+function isolated(stickers) {
+    return stickers.flatMap(s => {
+        const others = stickers.filter(other => other.id !== s.id);
+        if (!others.length) return [];
+        const nearest = others.reduce((a, b) => (distanceKm(s, b) < distanceKm(s, a) ? b : a));
+        return [{ ...s, distance_km: round(distanceKm(s, nearest)), nearest }];
+    }).sort((a, b) => b.distance_km - a.distance_km || b.id - a.id);
+}
+
 function stats(stickers, url) {
     const params = url.searchParams;
     const selected = filtered(stickers, params);
@@ -186,6 +197,7 @@ function stats(stickers, url) {
         case 'people': return personStats(selected, place);
         case 'pairs': return pairs(selected).slice(0, limit);
         case 'records': return records(selected);
+        case 'isolated': return isolated(selected).slice(0, limit);
         case 'latest': return latest(stickers);
         default: throw new Error(`no mock for ${url.pathname}`);
     }
