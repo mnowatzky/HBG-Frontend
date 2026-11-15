@@ -206,6 +206,7 @@ test.describe('with a few stickers', () => {
 
     test('finds the stickers farthest from their nearest, in the Zeitraum', async ({ page }) => {
         const isolated = rows(page, 'board_isolated');
+        await expect(page.locator('#weiteste #board_isolated')).toContainText('Der Sticker am weitesten weg von allen anderen');
         // Vienna's nearest is Berlin, the two in Hamburg are 0 m apart.
         await expect(isolated).toHaveCount(5);
         await expect(isolated.first()).toContainText(/Platz 1\s*Wien, Österreich\s*von Timo, nächster in Berlin, Deutschland\s*5\d\d km/);

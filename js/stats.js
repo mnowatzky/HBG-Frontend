@@ -128,7 +128,7 @@ async function loadPeriod() {
     const filters = periodDays(state.period);
     layoutCharts();
     setBusy(true);
-    const parts = [loadCards(filters), loadPeople(filters), loadPairs(filters), loadRecords(filters), loadPlaces(filters)];
+    const parts = [loadCards(filters), loadPeople(filters), loadPairs(filters), loadIsolated(filters), loadRecords(filters), loadPlaces(filters)];
     if (state.chartsShown && typeof loadCharts === 'function') parts.push(loadCharts(filters));
     const results = await Promise.allSettled(parts);
     setBusy(false);
@@ -345,6 +345,25 @@ function showFarthest(people) {
     })), { all: false });
 }
 
+// "Oakura, Neuseeland" as text, for renderBoard to escape
+function placeText(sticker) {
+    return [sticker.city, sticker.country].filter(Boolean).join(', ') || 'Unbekannter Ort';
+}
+
+// Einzelgänger: the stickers farthest from their nearest one, whatever the place to
+// measure from. The neighbours count only within the Zeitraum, so it takes two
+// stickers in it. Two alone far away are each other's nearest and share a rank.
+function loadIsolated(filters) {
+    return update('isolated', () => fetchStats('/isolated', { ...filters, limit: TOP }), stickers => {
+        renderBoard('board_isolated', stickers.map(sticker => ({
+            label: placeText(sticker),
+            value: sticker.distance_km,
+            text: formatKm(sticker.distance_km),
+            detail: `von ${sticker.people.join(' & ')}, nächster in ${placeText(sticker.nearest)}`,
+        })), { all: false, empty: 'Noch keine zwei Sticker in diesem Zeitraum' });
+    });
+}
+
 function currentPosition() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -510,24 +529,7 @@ function loadPlaces(filters) {
     return Promise.all([
         update('cities', () => fetchStats('/counts', { ...filters, by: 'city' }), counts => renderBoard('board_city_counts', byCount(counts))),
         update('countries', () => fetchStats('/counts', { ...filters, by: 'country' }), counts => renderBoard('board_country_counts', byCount(counts))),
-        update('isolated', () => fetchStats('/isolated', { ...filters, limit: TOP }), showIsolated),
     ]);
-}
-
-// "Oakura, Neuseeland" as text, for renderBoard to escape
-function placeText(sticker) {
-    return [sticker.city, sticker.country].filter(Boolean).join(', ') || 'Unbekannter Ort';
-}
-
-// The neighbours count only within the Zeitraum, so it takes two stickers in it.
-// Two alone far away are each other's nearest and share a rank.
-function showIsolated(stickers) {
-    renderBoard('board_isolated', stickers.map(sticker => ({
-        label: placeText(sticker),
-        value: sticker.distance_km,
-        text: formatKm(sticker.distance_km),
-        detail: `von ${sticker.people.join(' & ')}, nächster in ${placeText(sticker.nearest)}`,
-    })), { all: false, empty: 'Noch keine zwei Sticker in diesem Zeitraum' });
 }
 
 // ---- Wann wird geklebt? (the charts)
